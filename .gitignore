@@ -1,0 +1,9 @@
+.ansinews/
+node_modules/
+.DS_Store
+docs/assessments/
+docs/knowledge/
+docs/plans/
+skills/
+AGENTS.md
+CLAUDE.md

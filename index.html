@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ANSINEWS v0.1.0</title>
+  <style>
+    /* ── Reset & Base ───────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0c0c0c;
+      --bg2:      #111111;
+      --sep:      #222222;
+      --dim:      #3a3a3a;
+      --muted:    #555;
+      --text:     #c8c8c8;
+      --bright:   #f0f0f0;
+      --amber:    #f59e0b;
+      --blue:     #1d4ed8;
+      --blue-bg:  #172554;
+      --green:    #4ade80;
+      --red:      #f87171;
+      --cyan:     #22d3ee;
+      --yellow:   #fb923c;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Cascadia Code', 'JetBrains Mono', 'Fira Code',
+                   'SF Mono', 'Consolas', 'Monaco', 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.55;
+      height: 100dvh;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Layout ─────────────────────────────────────────── */
+    #terminal {
+      display: flex;
+      flex-direction: column;
+      width: 100vw;
+      height: 100dvh;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    /* ── Header ─────────────────────────────────────────── */
+    .hdr {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--blue);
+      color: #fff;
+      font-weight: 700;
+      padding: 3px 8px;
+      flex-shrink: 0;
+      letter-spacing: 0.04em;
+    }
+    .hdr-l { color: #93c5fd; }
+    .hdr-r {
+      color: var(--green);
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .cfg-btn,
+    .cfg-bulk,
+    .cfg-cancel,
+    .cfg-save {
+      border: 1px solid var(--sep);
+      background: var(--bg2);
+      color: var(--text);
+      font: inherit;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+    }
+    .cfg-btn {
+      padding: 2px 8px;
+      font-size: 11px;
+      color: var(--amber);
+      border-color: #5c3c00;
+    }
+    .cfg-btn:hover,
+    .cfg-bulk:hover,
+    .cfg-cancel:hover,
+    .cfg-save:hover {
+      border-color: var(--text);
+    }
+    .cfg-btn:disabled,
+    .cfg-bulk:disabled,
+    .cfg-cancel:disabled,
+    .cfg-save:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+
+    /* ── Tabs ───────────────────────────────────────────── */
+    .tabs {
+      display: flex;
+      align-items: center;
+      padding: 2px 4px;
+      gap: 0;
+      flex-shrink: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      background: var(--bg);
+    }
+    .tab {
+      padding: 0 8px;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      user-select: none;
+      transition: color 0.1s;
+    }
+    .tab:hover { color: var(--text); }
+    .tab-num  { color: var(--dim); }
+    .tab.tab-on {
+      background: var(--amber);
+      color: #000;
+      font-weight: 700;
+    }
+    .tab.tab-on .tab-num { color: #5c3c00; }
+    .tab-sep  { color: var(--sep); padding: 0 1px; }
+
+    /* ── Separator ──────────────────────────────────────── */
+    .sep {
+      height: 1px;
+      background: var(--sep);
+      flex-shrink: 0;
+    }
+
+    /* ── Generic row ────────────────────────────────────── */
+    .row {
+      display: flex;
+      align-items: baseline;
+      padding: 1px 8px;
+      white-space: pre;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex-shrink: 0;
+      gap: 6px;
+    }
+
+    /* ── Column header ──────────────────────────────────── */
+    .col-hdr {
+      color: var(--dim);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+    }
+    .col-hdr span { display: inline-block; }
+
+    /* ── News list ──────────────────────────────────────── */
+    .list {
+      flex: 1;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .item-row {
+      padding: 2px 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      transition: background 0.06s;
+    }
+    .item-row:hover { background: #161616; }
+    .item-row.sel   { background: var(--blue-bg); }
+    .item-row.sel .headline { color: #fff; font-weight: 600; }
+
+    .src      { font-weight: 700; flex-shrink: 0; width: 3.5em; display: inline-block; font-size: 12px; }
+    .age      { color: var(--green); flex-shrink: 0; width: 3em; font-size: 12px; }
+    .headline { color: var(--text); overflow: hidden; text-overflow: ellipsis; }
+
+    /* ── Filter bar ─────────────────────────────────────── */
+    .filter-row {
+      color: var(--text);
+      padding: 2px 8px;
+      flex-shrink: 0;
+    }
+    .filter-label { color: var(--amber); font-weight: 700; }
+    .blink {
+      color: var(--amber);
+      animation: blink 0.8s step-end infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* ── Detail pane ────────────────────────────────────── */
+    .detail {
+      padding: 4px 0;
+      flex-shrink: 0;
+      background: var(--bg2);
+    }
+    .d-title {
+      color: var(--bright);
+      font-weight: 700;
+      padding: 2px 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .d-desc {
+      color: var(--muted);
+      padding: 0 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 12px;
+    }
+    .d-link {
+      color: var(--cyan);
+      padding: 2px 8px;
+      font-size: 11px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      opacity: 0.8;
+    }
+    .d-meta {
+      color: var(--dim);
+      padding: 0 8px;
+      font-size: 11px;
+    }
+    .d-hint {
+      color: var(--dim);
+      padding: 0 8px;
+      font-size: 11px;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Status bar ─────────────────────────────────────── */
+    .statusbar {
+      font-size: 11px;
+      padding: 2px 8px;
+      flex-shrink: 0;
+      gap: 0;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .s-load   { color: var(--amber); }
+    .s-err    { color: var(--red); }
+    .s-filter { color: var(--amber); }
+    .s-msg    { color: var(--amber); }
+    .s-hints  { color: var(--dim); letter-spacing: 0.04em; }
+
+    /* ── Scrollbar: hide ────────────────────────────────── */
+    ::-webkit-scrollbar { display: none; }
+    * { scrollbar-width: none; }
+
+    .cfg-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.72);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .cfg-panel {
+      width: min(920px, 100%);
+      max-height: 100%;
+      background: var(--bg);
+      border: 1px solid var(--sep);
+      box-shadow: 0 0 0 1px #000;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .cfg-header {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--sep);
+      background: var(--bg2);
+    }
+    .cfg-title {
+      color: var(--bright);
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      font-size: 12px;
+    }
+    .cfg-subtitle {
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 2px;
+    }
+    .cfg-body {
+      padding: 12px;
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .cfg-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--sep);
+      background: #0f0f0f;
+      flex-wrap: wrap;
+    }
+    .cfg-search {
+      flex: 1 1 280px;
+      min-width: 0;
+      border: 1px solid var(--sep);
+      background: #090909;
+      color: var(--bright);
+      font: inherit;
+      padding: 8px 10px;
+      outline: none;
+    }
+    .cfg-search:focus {
+      border-color: var(--cyan);
+    }
+    .cfg-summary {
+      color: var(--amber);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .cfg-bulk,
+    .cfg-cancel,
+    .cfg-save {
+      padding: 7px 10px;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+    .cfg-note {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.5;
+    }
+    .cfg-note-warn {
+      color: var(--amber);
+    }
+    .cfg-group {
+      border: 1px solid var(--sep);
+      background: #090909;
+    }
+    .cfg-group-title {
+      color: var(--bright);
+      background: #111111;
+      border-bottom: 1px solid var(--sep);
+      padding: 7px 10px;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .cfg-group-rows {
+      display: flex;
+      flex-direction: column;
+    }
+    .cfg-feed-row {
+      display: grid;
+      grid-template-columns: 20px 56px minmax(0, 1fr);
+      gap: 8px;
+      align-items: start;
+      padding: 9px 10px;
+      border-top: 1px solid #131313;
+      cursor: pointer;
+    }
+    .cfg-feed-row:first-child {
+      border-top: none;
+    }
+    .cfg-feed-row:hover {
+      background: #101010;
+    }
+    .cfg-check {
+      margin-top: 2px;
+      accent-color: var(--amber);
+    }
+    .cfg-feed-tag {
+      color: var(--cyan);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .cfg-feed-copy {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .cfg-feed-name {
+      color: var(--bright);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .cfg-feed-url {
+      color: var(--muted);
+      font-size: 11px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .cfg-save {
+      border-color: #14532d;
+      color: var(--green);
+    }
+    .cfg-empty {
+      color: var(--muted);
+      padding: 10px 0 4px;
+      font-size: 12px;
+    }
+    .cfg-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-top: 1px solid var(--sep);
+      background: var(--bg2);
+    }
+    .cfg-spacer {
+      flex: 1;
+    }
+    .cfg-actions-note {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    @media (max-width: 720px) {
+      .cfg-overlay {
+        padding: 0;
+      }
+      .cfg-panel {
+        width: 100%;
+        height: 100%;
+        max-height: none;
+        border: none;
+      }
+      .cfg-toolbar {
+        align-items: stretch;
+      }
+      .cfg-actions {
+        flex-wrap: wrap;
+      }
+      .cfg-spacer {
+        display: none;
+      }
+      .cfg-feed-row {
+        grid-template-columns: 20px 48px minmax(0, 1fr);
+      }
+      .cfg-actions-note {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="terminal"></div>
+  <script src="news-core.js"></script>
+  <script src="browser.js"></script>
+</body>
+</html>

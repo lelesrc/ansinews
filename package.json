@@ -1,0 +1,17 @@
+{
+  "name": "ansinews",
+  "version": "0.1.0",
+  "description": "A minimal, zero-dependency RSS reader for terminal and web",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/USER/ansinews.git"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "private": true,
+  "scripts": {
+    "test": "node --test"
+  }
+}
