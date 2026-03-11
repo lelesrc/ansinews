@@ -5,10 +5,8 @@
 ### Changed
 
 - Terminal tabs line now windows gracefully when feeds overflow the terminal width, showing `<` / `>` indicators for hidden tabs.
-
-### Fixed
-
-- Terminal no longer flickers on every render — replaced full-screen erase with cursor-home and per-line clearing.
+- Left/right arrow keys and `h`/`l` now cycle through feed tabs, making all feeds keyboard-accessible beyond the `0-9` shortcuts.
+- Hint bar uses arrow symbols and consolidates feed navigation into a single `[←→ hl 0-9] feed` hint.
 
 ## [0.1.0] - 2026-03-08
 
