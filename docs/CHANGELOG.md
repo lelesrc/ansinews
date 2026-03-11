@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- Terminal no longer flickers on every render — replaced full-screen erase with cursor-home and per-line clearing.
+
 ## [0.1.0] - 2026-03-08
 
 ### Added

@@ -25,6 +25,9 @@ const A = {
   bgBlue: '\x1b[44m',
   bgYellow: '\x1b[43m',
   clear: '\x1b[2J\x1b[H',
+  home: '\x1b[H',
+  clearLine: '\x1b[K',
+  clearDown: '\x1b[J',
   hideCursor: '\x1b[?25l',
   showCursor: '\x1b[?25h'
 };
@@ -468,6 +471,15 @@ function openURL(url) {
   cp.exec(cmd + ' "' + url.replace(/"/g, '\\"') + '"');
 }
 
+function flushLines(lines) {
+  let out = A.home;
+  for (let i = 0; i < lines.length; i++) {
+    out += lines[i] + A.clearLine + '\n';
+  }
+  out += A.clearDown;
+  return out;
+}
+
 function getListHeight(state) {
   const filterHeight = state.filtering ? 2 : 0;
   const detailHeight = state.detail ? 7 : 0;
@@ -538,7 +550,7 @@ function render(view) {
 
   if (pickerState.open) {
     renderPicker(view, lines);
-    process.stdout.write(A.clear + lines.join('\n'));
+    process.stdout.write(flushLines(lines));
     return;
   }
 
@@ -621,7 +633,7 @@ function render(view) {
 
   lines.push(' ' + status);
 
-  process.stdout.write(A.clear + lines.join('\n'));
+  process.stdout.write(flushLines(lines));
 }
 
 function handlePickerKey(key) {
