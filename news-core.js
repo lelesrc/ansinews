@@ -14,7 +14,7 @@
   const MAX_ITEMS = 50;
   const PREF_KEY = 'ansinews';
   const CORS_PROXY = 'https://corsproxy.io/?';
-  const MAX_SHORTCUT_TABS = 10;
+
   const ALL_TAB = { id: 'all', tag: 'ALL' };
   const FEED_STYLES = [
     { ansi: '\x1b[35m', css: '#c084fc' },
@@ -334,16 +334,6 @@
     };
   }
 
-  function getFeedHint(tabs) {
-    const maxTabIndex = Math.min(tabs.length - 1, MAX_SHORTCUT_TABS - 1);
-
-    if (maxTabIndex <= 0) {
-      return '';
-    }
-
-    return '[' + 0 + '-' + maxTabIndex + '] feed  ';
-  }
-
   function createApp(platform) {
     if (!platform || typeof platform.fetchXML !== 'function' || typeof platform.render !== 'function') {
       throw new Error('createApp requires a platform with fetchXML() and render()');
@@ -417,13 +407,11 @@
     }
 
     function getHintKeys(includeQuit) {
-      const tabs = buildTabs(state.feeds);
-
       if (state.detail) {
-        return '[up/down jk] nav  [enter/o] open  [esc/q] back';
+        return '[↑↓ jk] nav  [enter/o] open  [esc/q] back';
       }
 
-      return '[up/down jk] nav  ' + getFeedHint(tabs) + '[/] filter  [enter] detail  [o] open  [r] refresh'
+      return '[↑↓ jk] nav  [←→ hl 0-9] feed  [/] filter  [enter] detail  [o] open  [r] refresh'
         + (includeQuit ? '  [q] quit' : '');
     }
 
@@ -752,15 +740,29 @@
             return;
           }
           break;
-        default:
+        case 'ArrowLeft':
+        case 'h':
+        case 'ArrowRight':
+        case 'l':
+        default: {
+          const tabs = buildTabs(state.feeds);
+          const cur = tabs.findIndex(function(t) { return t.id === state.active; });
+          if ((key === 'ArrowLeft' || key === 'h') && cur > 0) {
+            activateFeed(tabs[cur - 1].id);
+            return;
+          }
+          if ((key === 'ArrowRight' || key === 'l') && cur < tabs.length - 1) {
+            activateFeed(tabs[cur + 1].id);
+            return;
+          }
           if (key >= '0' && key <= '9') {
-            const tabs = buildTabs(state.feeds);
             const tab = tabs[parseInt(key, 10)];
             if (tab) {
               activateFeed(tab.id);
               return;
             }
           }
+        }
       }
 
       render();

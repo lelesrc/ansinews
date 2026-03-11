@@ -472,12 +472,7 @@ function openURL(url) {
 }
 
 function flushLines(lines) {
-  let out = A.home;
-  for (let i = 0; i < lines.length; i++) {
-    out += lines[i] + A.clearLine + '\n';
-  }
-  out += A.clearDown;
-  return out;
+  return A.clear + lines.join('\n');
 }
 
 function getListHeight(state) {
