@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Terminal tabs line now windows gracefully when feeds overflow the terminal width, showing `<` / `>` indicators for hidden tabs.
+
 ### Fixed
 
 - Terminal no longer flickers on every render — replaced full-screen erase with cursor-home and per-line clearing.

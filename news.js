@@ -539,6 +539,105 @@ function renderPicker(view, lines) {
   }
 }
 
+function buildTabsLine(tabs, activeId, width) {
+  var labels = [];
+  var widths = [];
+
+  tabs.forEach(function(tab, index) {
+    var label = ' ' + index + ':' + tab.tag + ' ';
+    labels.push(label);
+    widths.push(label.length + 1);
+  });
+
+  var totalWidth = 1;
+  for (var i = 0; i < widths.length; i++) {
+    totalWidth += widths[i];
+  }
+
+  if (totalWidth <= width) {
+    var line = ' ';
+    tabs.forEach(function(tab, index) {
+      if (activeId === tab.id) {
+        line += A.bgYellow + '\x1b[30m' + A.bold + labels[index] + A.reset + A.dim + '|' + A.reset;
+      } else {
+        line += A.dim + labels[index] + '|' + A.reset;
+      }
+    });
+    return line + ' '.repeat(Math.max(0, width - visibleLength(line)));
+  }
+
+  var activeIndex = 0;
+  for (var a = 0; a < tabs.length; a++) {
+    if (tabs[a].id === activeId) {
+      activeIndex = a;
+      break;
+    }
+  }
+
+  // Conservatively reserve space for both indicators.
+  // If one isn't needed, padding fills the slack.
+  var available = width - 1 - 2 - 2;
+
+  var startIndex = 0;
+  var endIndex = 0;
+  var usedWidth = 0;
+
+  for (var p = 0; p < tabs.length; p++) {
+    if (usedWidth + widths[p] <= available) {
+      usedWidth += widths[p];
+      endIndex = p + 1;
+    } else {
+      break;
+    }
+  }
+
+  if (activeIndex >= endIndex) {
+    startIndex = activeIndex;
+    endIndex = activeIndex + 1;
+    usedWidth = widths[activeIndex];
+
+    for (var b = activeIndex - 1; b >= 0; b--) {
+      if (usedWidth + widths[b] <= available) {
+        usedWidth += widths[b];
+        startIndex = b;
+      } else {
+        break;
+      }
+    }
+
+    for (var f = endIndex; f < tabs.length; f++) {
+      if (usedWidth + widths[f] <= available) {
+        usedWidth += widths[f];
+        endIndex = f + 1;
+      } else {
+        break;
+      }
+    }
+  }
+
+  var hiddenLeft = startIndex > 0;
+  var hiddenRight = endIndex < tabs.length;
+
+  var result = ' ';
+  if (hiddenLeft) {
+    result += A.dim + '< ' + A.reset;
+  }
+
+  for (var v = startIndex; v < endIndex; v++) {
+    if (activeId === tabs[v].id) {
+      result += A.bgYellow + '\x1b[30m' + A.bold + labels[v] + A.reset + A.dim + '|' + A.reset;
+    } else {
+      result += A.dim + labels[v] + '|' + A.reset;
+    }
+  }
+
+  if (hiddenRight) {
+    result += A.dim + ' >' + A.reset;
+  }
+
+  return result + ' '.repeat(Math.max(0, width - visibleLength(result)));
+}
+
 function render(view) {
   const lines = [];
   const meta = view.meta;
@@ -554,16 +653,7 @@ function render(view) {
     return;
   }
 
-  let tabsLine = ' ';
-  view.tabs.forEach(function(tab, index) {
-    const label = ' ' + index + ':' + tab.tag + ' ';
-    if (view.state.active === tab.id) {
-      tabsLine += A.bgYellow + '\x1b[30m' + A.bold + label + A.reset + A.dim + '|' + A.reset;
-    } else {
-      tabsLine += A.dim + label + '|' + A.reset;
-    }
-  });
-  lines.push(tabsLine + ' '.repeat(Math.max(0, cols - visibleLength(tabsLine))));
+  lines.push(buildTabsLine(view.tabs, view.state.active, cols));
 
   if (view.state.filtering) {
     lines.push(A.dim + '-'.repeat(cols) + A.reset);
