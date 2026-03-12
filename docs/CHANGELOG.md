@@ -2,8 +2,14 @@
 
 ## [Unreleased]
 
+### Added
+
+- MCP server (`mcp.js`) exposes four tools over stdio JSON-RPC 2.0: `list_feeds`, `add_feed`, `remove_feed`, `read_news`. Zero dependencies, shares config and RSS parsing with the terminal shell.
+
 ### Changed
 
+- Terminal feed tabs, detail panel, and hint bar now use subtle background fills for clearer visual hierarchy.
+- Errored feed tabs are shown in bold red for better visibility against the new background.
 - Terminal tabs line now windows gracefully when feeds overflow the terminal width, showing `<` / `>` indicators for hidden tabs.
 - Left/right arrow keys and `h`/`l` now cycle through feed tabs, making all feeds keyboard-accessible beyond the `0-9` shortcuts.
 - Hint bar uses arrow symbols and consolidates feed navigation into a single `[←→ hl 0-9] feed` hint.

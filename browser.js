@@ -478,7 +478,7 @@
     }
   }
 
-  function renderConfigPanel() {
+  function renderConfigPanel(tabs) {
     let infoHTML;
     let groupsHTML;
     let emptyHTML;
@@ -487,6 +487,9 @@
     if (!editorState.open) {
       return '';
     }
+
+    var errorIds = Object.create(null);
+    (tabs || []).forEach(function(tab) { if (tab.error) errorIds[tab.id] = true; });
 
     if (editorState.catalogStatus === 'pending') {
       infoHTML = '<div class="cfg-note">Loading feed catalog...</div>';
@@ -504,7 +507,7 @@
         return '<label class="cfg-feed-row">'
           + '<input class="cfg-check" type="checkbox" data-feed-id="' + escAttr(feed.id) + '"' + checked
           + (editorState.saving ? ' disabled' : '') + '>'
-          + '<span class="cfg-feed-tag">' + escAttr(feed.tag) + '</span>'
+          + '<span class="cfg-feed-tag' + (errorIds[feed.id] ? ' cfg-feed-err' : '') + '">' + escAttr(feed.tag) + '</span>'
           + '<span class="cfg-feed-copy">'
             + '<span class="cfg-feed-name">' + escAttr(feed.name) + '</span>'
             + '<span class="cfg-feed-url">' + escAttr(feed.url) + '</span>'
@@ -565,7 +568,8 @@
     const esc = view.meta.esc;
     const tabsHTML = view.tabs.map(function(tab, index) {
       const active = view.state.active === tab.id ? ' tab-on' : '';
-      return '<span class="tab' + active + '" data-feed="' + tab.id + '">'
+      const err = !active && tab.error ? ' tab-err' : '';
+      return '<span class="tab' + active + err + '" data-feed="' + tab.id + '">'
         + '<span class="tab-num">' + index + '</span>:' + tab.tag
         + '</span><span class="tab-sep">|</span>';
     }).join('');
@@ -630,13 +634,15 @@
         + '<div class="tabs">' + tabsHTML + '</div>'
         + filterHTML
         + '<div class="sep"></div>'
-        + '<div class="row col-hdr"><span>SRC&nbsp;&nbsp;</span><span>AGE&nbsp;</span><span>HEADLINE</span></div>'
-        + '<div class="list">' + rowsHTML + '</div>'
+        + (view.activeError
+          ? '<div class="feed-error">Failed to load feed: ' + esc(view.activeError) + '<br>Press [r] to refresh</div>'
+          : '<div class="row col-hdr"><span>SRC&nbsp;&nbsp;</span><span>AGE&nbsp;</span><span>HEADLINE</span></div>'
+            + '<div class="list">' + rowsHTML + '</div>')
         + detailHTML
         + '<div class="sep"></div>'
         + '<div class="row statusbar">' + statusHTML + '</div>'
       + '</div>'
-      + renderConfigPanel();
+      + renderConfigPanel(view.tabs);
 
     restoreFocus(focusSnapshot);
   }

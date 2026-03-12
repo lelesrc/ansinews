@@ -316,7 +316,7 @@
 
   function buildTabs(feeds) {
     return [ALL_TAB].concat(feeds.map(function(feed) {
-      return { id: feed.id, tag: feed.tag };
+      return { id: feed.id, tag: feed.tag, error: !!feed.error };
     }));
   }
 
@@ -504,6 +504,11 @@
         tabs: buildTabs(state.feeds),
         loading: feedStatus().loading,
         errs: feedStatus().errs,
+        activeError: (function() {
+          if (state.active === 'all') return null;
+          var f = state.feeds.find(function(c) { return c.id === state.active; });
+          return f && f.error ? f.error : null;
+        })(),
         timer: fmtTimer(),
         clock: fmtClock(new Date()),
         statusMsg: state.statusMsg,
@@ -809,6 +814,7 @@
     CORS_PROXY: CORS_PROXY,
     FEEDS: DEFAULT_FEEDS,
     DEFAULT_FEEDS: DEFAULT_FEEDS,
+    parseRSS: parseRSS,
     createApp: createApp,
     normalizeConfig: normalizeConfig
   };

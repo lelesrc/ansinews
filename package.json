@@ -12,6 +12,7 @@
   },
   "private": true,
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "mcp": "node mcp.js"
   }
 }

@@ -24,6 +24,8 @@ const A = {
   brightWhite: '\x1b[97m',
   bgBlue: '\x1b[44m',
   bgYellow: '\x1b[43m',
+  bgGray: '\x1b[100m',
+  rBg: '\x1b[0m\x1b[100m',   // reset then re-apply bgGray
   clear: '\x1b[2J\x1b[H',
   home: '\x1b[H',
   clearLine: '\x1b[K',
@@ -63,6 +65,20 @@ function readJSON(filePath) {
 
 function visibleLength(text) {
   return String(text || '').replace(/\x1b\[[0-9;?]*[A-Za-z]/g, '').length;
+}
+
+function bgPad(meta, s, width) {
+  return A.bgGray + meta.pad(s, width) + A.reset;
+}
+
+function tabSegment(label, tab, activeId) {
+  if (activeId === tab.id) {
+    return A.bgYellow + '\x1b[30m' + A.bold + label + A.rBg + A.dim + '|' + A.rBg;
+  }
+  if (tab.error) {
+    return A.bold + A.red + label + '|' + A.rBg;
+  }
+  return A.dim + label + '|' + A.rBg;
 }
 
 function trimText(value, maxLength) {
@@ -487,6 +503,8 @@ function renderPicker(view, lines) {
   const pickerRows = buildPickerRows();
   const listHeight = getPickerListHeight();
   const selectedCount = getSelectedCount();
+  const errorIds = Object.create(null);
+  view.tabs.forEach(function(tab) { if (tab.error) errorIds[tab.id] = true; });
 
   syncPickerScroll(pickerRows.length, listHeight);
 
@@ -521,16 +539,17 @@ function renderPicker(view, lines) {
     if (selected) {
       lines.push(A.bgBlue + A.brightWhite + A.bold + row + A.reset);
     } else {
-      lines.push(' ' + A.yellow + mark + A.reset + ' ' + A.cyan + tag + A.reset + ' ' + A.dim + category + A.reset + ' ' + A.white + title + A.reset);
+      const tagColor = errorIds[feed.id] ? A.red : A.cyan;
+      lines.push(' ' + A.yellow + mark + A.reset + ' ' + tagColor + tag + A.reset + ' ' + A.dim + category + A.reset + ' ' + A.white + title + A.reset);
     }
   }
 
   lines.push(A.dim + '-'.repeat(cols) + A.reset);
 
   if (pickerState.saving) {
-    lines.push(' ' + A.yellow + 'Saving feed selection...' + A.reset);
+    lines.push(bgPad(meta, ' ' + A.yellow + 'Saving feed selection...' + A.rBg, cols));
   } else {
-    lines.push(' ' + A.dim + '[up/down jk] nav  [space] toggle  [/] filter  [enter] save  [esc/q] cancel' + A.reset);
+    lines.push(bgPad(meta, ' ' + A.dim + '[up/down jk] nav  [space] toggle  [/] filter  [enter] save  [esc/q] cancel' + A.rBg, cols));
   }
 }
 
@@ -550,15 +569,11 @@ function buildTabsLine(tabs, activeId, width) {
   }
 
   if (totalWidth <= width) {
-    var line = ' ';
+    var line = A.bgGray + ' ';
     tabs.forEach(function(tab, index) {
-      if (activeId === tab.id) {
-        line += A.bgYellow + '\x1b[30m' + A.bold + labels[index] + A.reset + A.dim + '|' + A.reset;
-      } else {
-        line += A.dim + labels[index] + '|' + A.reset;
-      }
+      line += tabSegment(labels[index], tab, activeId);
     });
-    return line + ' '.repeat(Math.max(0, width - visibleLength(line)));
+    return line + ' '.repeat(Math.max(0, width - visibleLength(line))) + A.reset;
   }
 
   var activeIndex = 0;
@@ -613,24 +628,20 @@ function buildTabsLine(tabs, activeId, width) {
   var hiddenLeft = startIndex > 0;
   var hiddenRight = endIndex < tabs.length;
 
-  var result = ' ';
+  var result = A.bgGray + ' ';
   if (hiddenLeft) {
-    result += A.dim + '< ' + A.reset;
+    result += A.dim + '< ' + A.rBg;
   }
 
   for (var v = startIndex; v < endIndex; v++) {
-    if (activeId === tabs[v].id) {
-      result += A.bgYellow + '\x1b[30m' + A.bold + labels[v] + A.reset + A.dim + '|' + A.reset;
-    } else {
-      result += A.dim + labels[v] + '|' + A.reset;
-    }
+    result += tabSegment(labels[v], tabs[v], activeId);
   }
 
   if (hiddenRight) {
-    result += A.dim + ' >' + A.reset;
+    result += A.dim + ' >' + A.rBg;
   }
 
-  return result + ' '.repeat(Math.max(0, width - visibleLength(result)));
+  return result + ' '.repeat(Math.max(0, width - visibleLength(result))) + A.reset;
 }
 
 function render(view) {
@@ -657,27 +668,37 @@ function render(view) {
   }
 
   lines.push(A.dim + '-'.repeat(cols) + A.reset);
-  lines.push(A.dim + ' ' + 'SRC'.padEnd(5) + ' ' + 'AGE'.padEnd(4) + ' HEADLINE' + A.reset);
 
-  for (let i = 0; i < view.listHeight; i += 1) {
-    const item = view.visibleItems[i];
-
-    if (!item) {
+  if (view.activeError) {
+    lines.push('');
+    lines.push('  ' + A.red + 'Failed to load feed: ' + meta.trunc(view.activeError, cols - 24) + A.reset);
+    lines.push('  ' + A.dim + 'Press [r] to refresh' + A.reset);
+    for (let i = 0; i < view.listHeight - 2; i += 1) {
       lines.push('');
-      continue;
     }
+  } else {
+    lines.push(A.dim + ' ' + 'SRC'.padEnd(5) + ' ' + 'AGE'.padEnd(4) + ' HEADLINE' + A.reset);
 
-    const absoluteIndex = view.state.scroll + i;
-    const selected = absoluteIndex === view.state.cursor;
-    const src = meta.pad(meta.trunc(item.feedTag, 5), 5);
-    const age = meta.pad(meta.fmtAge(item.date), 4);
-    const title = meta.trunc(item.title, Math.max(1, cols - 13));
+    for (let i = 0; i < view.listHeight; i += 1) {
+      const item = view.visibleItems[i];
 
-    if (selected) {
-      const row = meta.pad(' ' + src + ' ' + age + ' ' + title, cols);
-      lines.push(A.bgBlue + A.brightWhite + A.bold + row + A.reset);
-    } else {
-      lines.push(' ' + (item.ansi || A.cyan) + src + A.reset + ' ' + A.green + age + A.reset + ' ' + A.white + title + A.reset);
+      if (!item) {
+        lines.push('');
+        continue;
+      }
+
+      const absoluteIndex = view.state.scroll + i;
+      const selected = absoluteIndex === view.state.cursor;
+      const src = meta.pad(meta.trunc(item.feedTag, 5), 5);
+      const age = meta.pad(meta.fmtAge(item.date), 4);
+      const title = meta.trunc(item.title, Math.max(1, cols - 13));
+
+      if (selected) {
+        const row = meta.pad(' ' + src + ' ' + age + ' ' + title, cols);
+        lines.push(A.bgBlue + A.brightWhite + A.bold + row + A.reset);
+      } else {
+        lines.push(' ' + (item.ansi || A.cyan) + src + A.reset + ' ' + A.green + age + A.reset + ' ' + A.white + title + A.reset);
+      }
     }
   }
 
@@ -685,12 +706,13 @@ function render(view) {
     lines.push(A.dim + '-'.repeat(cols) + A.reset);
     if (view.selectedItem) {
       const detailLines = meta.wrap(view.selectedItem.desc || '(no description)', cols - 2, 2);
-      lines.push(' ' + A.brightWhite + A.bold + meta.trunc(view.selectedItem.title, cols - 2) + A.reset);
-      lines.push(' ' + A.dim + (detailLines[0] || '') + A.reset);
-      lines.push(' ' + A.dim + (detailLines[1] || '') + A.reset);
-      lines.push(' ' + A.cyan + A.dim + meta.trunc(view.selectedItem.link, cols - 2) + A.reset);
-      lines.push(' ' + A.dim + meta.trunc(meta.fmtMeta(view.selectedItem), cols - 2) + A.reset);
-      lines.push(' ' + A.dim + '[enter/o] open in browser   [esc/q] back' + A.reset);
+      const bp = function(s) { return bgPad(meta, s, cols); };
+      lines.push(bp(' ' + A.brightWhite + A.bold + meta.trunc(view.selectedItem.title, cols - 2) + A.rBg));
+      lines.push(bp(' ' + (detailLines[0] || '')));
+      lines.push(bp(' ' + (detailLines[1] || '')));
+      lines.push(bp(' ' + A.cyan + meta.trunc(view.selectedItem.link, cols - 2) + A.rBg));
+      lines.push(bp(' ' + meta.trunc(meta.fmtMeta(view.selectedItem), cols - 2)));
+      lines.push(bp(' [enter/o] open in browser   [esc/q] back'));
     } else {
       for (let i = 0; i < 6; i += 1) {
         lines.push('');
@@ -702,21 +724,21 @@ function render(view) {
 
   let status = '';
   if (view.loading) {
-    status += A.yellow + 'LOAD' + A.reset + '  ';
+    status += A.yellow + 'LOAD' + A.rBg + '  ';
   }
   if (view.errs > 0) {
-    status += A.red + 'ERR ' + view.errs + A.reset + '  ';
+    status += A.red + 'ERR ' + view.errs + A.rBg + '  ';
   }
   if (view.state.filter) {
-    status += A.yellow + '/' + view.state.filter + '/' + A.reset + '  ';
+    status += A.yellow + '/' + view.state.filter + '/' + A.rBg + '  ';
   }
   if (view.statusMsg) {
-    status += A.yellow + view.statusMsg + A.reset;
+    status += A.yellow + view.statusMsg + A.rBg;
   } else {
-    status += A.dim + view.hintKeys + '  [f] feeds' + A.reset;
+    status += A.dim + view.hintKeys + '  [f] feeds' + A.rBg;
   }
 
-  lines.push(' ' + status);
+  lines.push(bgPad(meta, ' ' + status, cols));
 
   process.stdout.write(flushLines(lines));
 }

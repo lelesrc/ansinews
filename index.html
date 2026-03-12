@@ -135,7 +135,17 @@
       font-weight: 700;
     }
     .tab.tab-on .tab-num { color: #5c3c00; }
+    .tab.tab-err { color: var(--red); }
+    .tab.tab-err .tab-num { color: var(--red); opacity: 0.6; }
     .tab-sep  { color: var(--sep); padding: 0 1px; }
+
+    /* ── Feed error ─────────────────────────────────────── */
+    .feed-error {
+      color: var(--red);
+      padding: 24px 16px;
+      flex: 1;
+      min-height: 0;
+    }
 
     /* ── Separator ──────────────────────────────────────── */
     .sep {
@@ -393,6 +403,7 @@
       font-weight: 700;
       white-space: nowrap;
     }
+    .cfg-feed-err { color: var(--red); }
     .cfg-feed-copy {
       min-width: 0;
       display: flex;
