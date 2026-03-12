@@ -334,6 +334,18 @@
     };
   }
 
+  function moveCursor(cursor, key, maxIdx) {
+    switch (key) {
+      case 'ArrowUp': case 'k':   return Math.max(0, cursor - 1);
+      case 'ArrowDown': case 'j': return Math.min(maxIdx, cursor + 1);
+      case 'PageUp':              return Math.max(0, cursor - 15);
+      case 'PageDown':            return Math.min(maxIdx, cursor + 15);
+      case 'Home': case 'g':      return 0;
+      case 'End': case 'G':       return maxIdx;
+      default:                    return null;
+    }
+  }
+
   function createApp(platform) {
     if (!platform || typeof platform.fetchXML !== 'function' || typeof platform.render !== 'function') {
       throw new Error('createApp requires a platform with fetchXML() and render()');
@@ -816,6 +828,7 @@
     DEFAULT_FEEDS: DEFAULT_FEEDS,
     parseRSS: parseRSS,
     createApp: createApp,
-    normalizeConfig: normalizeConfig
+    normalizeConfig: normalizeConfig,
+    moveCursor: moveCursor
   };
 });

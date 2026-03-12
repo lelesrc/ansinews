@@ -8,7 +8,7 @@ const cp = require('child_process');
 const http = require('http');
 const https = require('https');
 
-const { createApp, VERSION } = require('./news-core.js');
+const { createApp, VERSION, moveCursor } = require('./news-core.js');
 
 const DEFAULT_FEEDS_PATH = path.join(__dirname, 'default_feeds.json');
 
@@ -769,29 +769,14 @@ function handlePickerKey(key) {
     return;
   }
 
+  var moved = moveCursor(pickerState.cursor, key, maxIndex);
+  if (moved !== null) {
+    pickerState.cursor = moved;
+    app.render();
+    return;
+  }
+
   switch (key) {
-    case 'ArrowUp':
-    case 'k':
-      pickerState.cursor = Math.max(0, pickerState.cursor - 1);
-      break;
-    case 'ArrowDown':
-    case 'j':
-      pickerState.cursor = Math.min(maxIndex, pickerState.cursor + 1);
-      break;
-    case 'PageUp':
-      pickerState.cursor = Math.max(0, pickerState.cursor - 15);
-      break;
-    case 'PageDown':
-      pickerState.cursor = Math.min(maxIndex, pickerState.cursor + 15);
-      break;
-    case 'Home':
-    case 'g':
-      pickerState.cursor = 0;
-      break;
-    case 'End':
-    case 'G':
-      pickerState.cursor = maxIndex;
-      break;
     case ' ':
       if (pickerRows[pickerState.cursor]) {
         if (pickerState.selectedIds[pickerRows[pickerState.cursor].id]) {

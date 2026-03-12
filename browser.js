@@ -18,7 +18,9 @@
     customFeeds: [],
     catalog: [],
     catalogStatus: 'idle',
-    catalogError: ''
+    catalogError: '',
+    dirty: false,
+    cursor: 0
   };
   let catalogRequest = null;
 
@@ -238,6 +240,7 @@
 
     editorState.catalogStatus = 'pending';
     editorState.catalogError = '';
+    editorState.dirty = true;
     app.render();
 
     catalogRequest = fetch(CATALOG_PATH, { cache: 'no-store' }).then(function(response) {
@@ -255,6 +258,7 @@
       editorState.catalogStatus = 'loaded';
       editorState.catalogError = '';
       reconcileCustomFeeds();
+      editorState.dirty = true;
       app.render();
       return editorState.catalog;
     }).catch(function(error) {
@@ -262,6 +266,7 @@
       editorState.catalogStatus = 'error';
       editorState.catalogError = error && error.message ? error.message : 'Could not load feed catalog.';
       reconcileCustomFeeds();
+      editorState.dirty = true;
       app.render();
       return [];
     });
@@ -273,8 +278,10 @@
     editorState.open = true;
     editorState.saving = false;
     editorState.search = '';
+    editorState.cursor = 0;
     seedDraftSelection(app.getConfig().feeds);
     ensureCatalogLoaded();
+    editorState.dirty = true;
     app.render();
   }
 
@@ -284,6 +291,8 @@
     editorState.search = '';
     editorState.selectedIds = Object.create(null);
     editorState.customFeeds = [];
+    editorState.cursor = 0;
+    editorState.dirty = true;
     app.render();
   }
 
@@ -356,6 +365,60 @@
     return groups;
   }
 
+  function buildFlatFeeds() {
+    var flat = [];
+    buildVisibleGroups().forEach(function(group) {
+      group.feeds.forEach(function(feed) { flat.push(feed); });
+    });
+    return flat;
+  }
+
+  function handleEditorKey(key, searchFocused, searchInput) {
+    if (editorState.saving) return;
+
+    if (searchFocused) {
+      if (key === 'Escape') {
+        searchInput.blur();
+        editorState.cursor = 0;
+        editorState.dirty = true;
+        app.render();
+      }
+      return;
+    }
+
+    var maxIdx = Math.max(0, buildFlatFeeds().length - 1);
+    var moved = core.moveCursor(editorState.cursor, key, maxIdx);
+
+    if (moved !== null) {
+      editorState.cursor = moved;
+      editorState.dirty = true;
+      app.render();
+      return;
+    }
+
+    switch (key) {
+      case ' ':
+        var feeds = buildFlatFeeds();
+        if (feeds[editorState.cursor]) {
+          var feedId = feeds[editorState.cursor].id;
+          setFeedSelection(feedId, !editorState.selectedIds[feedId]);
+        }
+        return;
+      case '/':
+        if (searchInput) {
+          searchInput.focus();
+          searchInput.select();
+        }
+        return;
+      case 'Enter':
+        saveDraft();
+        return;
+      case 'Escape': case 'q':
+        closeEditor();
+        return;
+    }
+  }
+
   function setFeedSelection(feedId, selected) {
     if (selected) {
       editorState.selectedIds[feedId] = true;
@@ -363,6 +426,7 @@
       delete editorState.selectedIds[feedId];
     }
 
+    editorState.dirty = true;
     app.render();
   }
 
@@ -377,6 +441,7 @@
       });
     });
 
+    editorState.dirty = true;
     app.render();
   }
 
@@ -415,6 +480,7 @@
     }
 
     editorState.saving = true;
+    editorState.dirty = true;
     app.render();
 
     try {
@@ -428,9 +494,11 @@
       editorState.search = '';
       editorState.selectedIds = Object.create(null);
       editorState.customFeeds = [];
+      editorState.dirty = true;
       app.setStatus(hasLocalStorage ? 'Saved feed selection.' : 'Saved for this session.');
     } catch (error) {
       editorState.saving = false;
+      editorState.dirty = true;
       app.setStatus('Could not save feed selection.');
       app.render();
     }
@@ -500,11 +568,15 @@
       infoHTML = '<div class="cfg-note">Browse the bundled feed list, filter it, then save your selection.</div>';
     }
 
+    var cursorIdx = 0;
     groupsHTML = buildVisibleGroups().map(function(group) {
       const rowsHTML = group.feeds.map(function(feed) {
         const checked = editorState.selectedIds[feed.id] ? ' checked' : '';
+        const focusClass = cursorIdx === editorState.cursor ? ' cfg-row-focus' : '';
+        const idx = cursorIdx;
+        cursorIdx++;
 
-        return '<label class="cfg-feed-row">'
+        return '<label class="cfg-feed-row' + focusClass + '" data-cursor-idx="' + idx + '">'
           + '<input class="cfg-check" type="checkbox" data-feed-id="' + escAttr(feed.id) + '"' + checked
           + (editorState.saving ? ' disabled' : '') + '>'
           + '<span class="cfg-feed-tag' + (errorIds[feed.id] ? ' cfg-feed-err' : '') + '">' + escAttr(feed.tag) + '</span>'
@@ -533,7 +605,7 @@
       + '<div class="cfg-panel">'
         + '<div class="cfg-header">'
           + '<div class="cfg-title">FEEDS</div>'
-          + '<div class="cfg-subtitle">Locate, select, and deselect RSS feeds for this browser.</div>'
+          + '<div class="cfg-subtitle">[&#x2191;&#x2193; jk] nav  [space] toggle  [/] filter  [enter] save  [esc] close</div>'
         + '</div>'
         + '<div class="cfg-toolbar">'
           + '<input class="cfg-search cfg-focus" data-focus-key="search" type="text" value="' + escAttr(editorState.search)
@@ -559,11 +631,14 @@
 
   function render(view) {
     const terminal = rootEl();
-    const focusSnapshot = captureFocus();
 
     if (!terminal) {
       return;
     }
+
+    const focusSnapshot = captureFocus();
+    const dirty = editorState.dirty;
+    editorState.dirty = false;
 
     const esc = view.meta.esc;
     const tabsHTML = view.tabs.map(function(tab, index) {
@@ -622,9 +697,8 @@
       statusHTML += '<span class="s-hints">' + esc(view.hintKeys) + '</span>';
     }
 
-    terminal.innerHTML =
-      '<div class="app-shell">'
-        + '<div class="hdr">'
+    const appInner =
+        '<div class="hdr">'
           + '<span class="hdr-l">&gt; ANSINEWS v' + view.version + '</span>'
           + '<div class="hdr-r">'
             + '<button class="cfg-btn" type="button">feeds</button>'
@@ -640,9 +714,34 @@
             + '<div class="list">' + rowsHTML + '</div>')
         + detailHTML
         + '<div class="sep"></div>'
-        + '<div class="row statusbar">' + statusHTML + '</div>'
-      + '</div>'
-      + renderConfigPanel(view.tabs);
+        + '<div class="row statusbar">' + statusHTML + '</div>';
+
+    const existingOverlay = terminal.querySelector('.cfg-overlay');
+
+    if (editorState.open && existingOverlay && !dirty) {
+      var shell = terminal.querySelector('.app-shell');
+      if (shell) {
+        shell.innerHTML = appInner;
+      }
+    } else {
+      var cfgBody = existingOverlay && existingOverlay.querySelector('.cfg-body');
+      var scrollSnapshot = cfgBody ? cfgBody.scrollTop : 0;
+
+      terminal.innerHTML = '<div class="app-shell">' + appInner + '</div>'
+        + renderConfigPanel(view.tabs);
+
+      if (scrollSnapshot) {
+        var restoredBody = terminal.querySelector('.cfg-body');
+        if (restoredBody) {
+          restoredBody.scrollTop = scrollSnapshot;
+        }
+      }
+
+      var focusedRow = terminal.querySelector('.cfg-row-focus');
+      if (focusedRow) {
+        focusedRow.scrollIntoView({ block: 'nearest' });
+      }
+    }
 
     restoreFocus(focusSnapshot);
   }
@@ -658,11 +757,22 @@
         return;
       }
 
+      if (!editorState.open && event.key === 'f') {
+        event.preventDefault();
+        openEditor();
+        return;
+      }
+
       if (editorState.open) {
-        if (event.key === 'Escape' && !editorState.saving) {
+        var terminal = rootEl();
+        var searchInput = terminal && terminal.querySelector('.cfg-search');
+        var searchFocused = searchInput && document.activeElement === searchInput;
+
+        if (!searchFocused && [' ', 'ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', '/'].includes(event.key)) {
           event.preventDefault();
-          closeEditor();
         }
+
+        handleEditorKey(event.key, searchFocused, searchInput);
         return;
       }
 
@@ -727,6 +837,8 @@
       }
 
       editorState.search = searchInput.value;
+      editorState.cursor = 0;
+      editorState.dirty = true;
       app.render();
     });
 

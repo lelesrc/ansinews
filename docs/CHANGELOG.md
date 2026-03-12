@@ -5,6 +5,13 @@
 ### Added
 
 - MCP server (`mcp.js`) exposes four tools over stdio JSON-RPC 2.0: `list_feeds`, `add_feed`, `remove_feed`, `read_news`. Zero dependencies, shares config and RSS parsing with the terminal shell.
+- Browser feed editor now supports full keyboard navigation matching the terminal picker: `j`/`k` and arrow keys to navigate, `Space` to toggle, `/` to search, `Enter` to save, `Escape`/`q` to close, `PageUp`/`PageDown`/`Home`/`End`/`g`/`G` for fast movement.
+- Press `f` in the browser to open the feed editor without clicking.
+- Shared `moveCursor` helper in the core ensures consistent cursor navigation between terminal and browser shells.
+
+### Fixed
+
+- Browser feed editor scroll position no longer resets on the 1-second render tick; the overlay DOM is preserved when unchanged.
 
 ### Changed
 
