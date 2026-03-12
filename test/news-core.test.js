@@ -253,6 +253,45 @@ describe('createApp', function() {
     }), ['Beta Story', 'Alpha Story']);
   });
 
+  it('filters items by description text when title does not match', async function() {
+    const url = 'https://example.com/feed.xml';
+    const harness = createPlatform({
+      prefs: {
+        feeds: [
+          { id: 'solo', tag: 'SOLO', name: 'Solo Feed', url: url }
+        ]
+      },
+      feedMap: {
+        [url]: makeRSS([
+          {
+            title: 'Weather Report',
+            link: 'https://example.com/weather',
+            desc: 'Tornado warning issued for the region',
+            pubDate: 'Tue, 05 Mar 2024 10:00:00 GMT'
+          },
+          {
+            title: 'Sports Recap',
+            link: 'https://example.com/sports',
+            desc: 'Final scores from last night',
+            pubDate: 'Tue, 05 Mar 2024 11:00:00 GMT'
+          }
+        ])
+      }
+    });
+    const app = core.createApp(harness.platform);
+
+    await app.refreshAll();
+    app.handleKey('/');
+    'tornado'.split('').forEach(function(ch) { app.handleKey(ch); });
+    app.handleKey('Enter');
+
+    const view = app.getView();
+    assert.equal(view.state.filter, 'tornado');
+    assert.deepEqual(view.items.map(function(item) {
+      return item.title;
+    }), ['Weather Report']);
+  });
+
   it('switches tabs with numeric shortcuts and manages detail state transitions', async function() {
     const oneUrl = 'https://example.com/one.xml';
     const twoUrl = 'https://example.com/two.xml';
