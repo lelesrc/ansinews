@@ -350,6 +350,63 @@
     };
   }
 
+  function escXmlAttr(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function exportOPML(feeds) {
+    var lines = [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      '<opml version="2.0">',
+      '<head><title>AnsiNews feeds</title></head>',
+      '<body>'
+    ];
+
+    (feeds || []).forEach(function(feed) {
+      if (!feed || !feed.url) return;
+      lines.push('<outline type="rss" text="' + escXmlAttr(feed.name || feed.tag || '')
+        + '" title="' + escXmlAttr(feed.name || feed.tag || '')
+        + '" xmlUrl="' + escXmlAttr(feed.url) + '" />');
+    });
+
+    lines.push('</body>');
+    lines.push('</opml>');
+    return lines.join('\n');
+  }
+
+  function parseOPML(xml) {
+    var feeds = [];
+    var outlinePattern = /<outline[^>]*xmlUrl\s*=\s*["']([^"']*)["'][^>]*>/gi;
+    var match;
+
+    function decodeXmlAttr(value) {
+      return value
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&apos;/g, '\'')
+        .replace(/&quot;/g, '"');
+    }
+
+    while ((match = outlinePattern.exec(xml)) !== null) {
+      var block = match[0];
+      var url = decodeXmlAttr(match[1]);
+
+      var textMatch = block.match(/\btitle\s*=\s*["']([^"']*)["']/i) || block.match(/\btext\s*=\s*["']([^"']*)["']/i);
+      var name = textMatch ? decodeXmlAttr(textMatch[1]) : '';
+
+      if (url) {
+        feeds.push({ name: name, url: url });
+      }
+    }
+
+    return feeds;
+  }
+
   function getDefaultConfig() {
     return {
       active: 'all',
@@ -947,6 +1004,9 @@
     sameFeed: sameFeed,
     normalizeCatalogFeed: normalizeCatalogFeed,
     normalizeCatalog: normalizeCatalog,
-    getCatalogMap: getCatalogMap
+    getCatalogMap: getCatalogMap,
+    exportOPML: exportOPML,
+    parseOPML: parseOPML,
+    normalizeFeeds: normalizeFeeds
   };
 });

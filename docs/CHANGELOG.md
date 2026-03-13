@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Added
+
+- Import/export feeds in OPML (industry standard) and JSON formats.
+- Terminal: `--export <path>` and `--import <path>` CLI flags for non-interactive feed backup, restore, and migration. `--help` flag documents usage.
+- Browser: export and import buttons in the feed editor panel. Export downloads an OPML file; import opens a file picker accepting `.opml`, `.xml`, and `.json` files.
+
 ## [0.2.0] - 2026-03-13
 
 ### Added

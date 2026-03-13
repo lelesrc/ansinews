@@ -8,7 +8,7 @@ const cp = require('child_process');
 const http = require('http');
 const https = require('https');
 
-const { createApp, VERSION, moveCursor, trimText, makeSlug, cloneFeed, cloneFeeds, sameFeed, normalizeCatalogFeed, normalizeCatalog, getCatalogMap } = require('./news-core.js');
+const { createApp, VERSION, moveCursor, trimText, makeSlug, cloneFeed, cloneFeeds, sameFeed, normalizeCatalogFeed, normalizeCatalog, getCatalogMap, exportOPML, parseOPML, normalizeConfig, normalizeFeeds } = require('./news-core.js');
 
 const DEFAULT_FEEDS_PATH = path.join(__dirname, 'default_feeds.json');
 
@@ -738,6 +738,90 @@ function cleanup() {
   }
   process.stdin.pause();
 }
+
+function handleCLI() {
+  var args = process.argv.slice(2);
+  var exportIndex = args.indexOf('--export');
+  var importIndex = args.indexOf('--import');
+
+  if (args.includes('--help') || args.includes('-h')) {
+    console.log('Usage: ansinews [options]');
+    console.log('');
+    console.log('Options:');
+    console.log('  --export <path>  Export feeds to file (OPML by default, .json for JSON)');
+    console.log('  --import <path>  Import feeds from file (OPML or JSON)');
+    console.log('  --help, -h       Show this help');
+    console.log('');
+    console.log('Without options, starts the interactive terminal reader.');
+    process.exit(0);
+  }
+
+  if (exportIndex !== -1) {
+    var exportPath = args[exportIndex + 1];
+    if (!exportPath || exportPath.startsWith('--')) {
+      console.error('Error: --export requires a file path.');
+      process.exit(1);
+    }
+    var config = normalizeConfig(loadPrefs());
+    var isJSON = /\.json$/i.test(exportPath);
+    var content = isJSON
+      ? JSON.stringify({ active: config.active, feeds: config.feeds }, null, 2)
+      : exportOPML(config.feeds);
+    try {
+      fs.writeFileSync(exportPath, content, 'utf8');
+    } catch (err) {
+      console.error('Error writing file: ' + (err.message || err));
+      process.exit(1);
+    }
+    console.log('Exported ' + config.feeds.length + ' feeds to ' + exportPath);
+    process.exit(0);
+  }
+
+  if (importIndex !== -1) {
+    var importPath = args[importIndex + 1];
+    if (!importPath || importPath.startsWith('--')) {
+      console.error('Error: --import requires a file path.');
+      process.exit(1);
+    }
+    var raw;
+    try {
+      raw = fs.readFileSync(importPath, 'utf8');
+    } catch (err) {
+      console.error('Error reading file: ' + (err.message || err));
+      process.exit(1);
+    }
+    var feeds;
+    var formatName;
+    try {
+      var parsed = JSON.parse(raw);
+      feeds = Array.isArray(parsed.feeds) ? parsed.feeds : Array.isArray(parsed) ? parsed : [];
+      formatName = 'JSON';
+    } catch (e) {
+      feeds = parseOPML(raw);
+      formatName = 'OPML';
+    }
+    if (!feeds.length) {
+      console.error('No valid feeds found in ' + importPath);
+      process.exit(1);
+    }
+    var result = normalizeFeeds(feeds);
+    if (!result.feeds.length) {
+      console.error('All feeds in ' + importPath + ' were invalid.');
+      process.exit(1);
+    }
+    var currentConfig = normalizeConfig(loadPrefs());
+    var newConfig = { active: currentConfig.active, feeds: result.feeds };
+    savePrefs(newConfig);
+    var msg = 'Imported ' + result.feeds.length + ' feeds from ' + importPath + ' (' + formatName + ')';
+    if (result.invalidCount) {
+      msg += ', ' + result.invalidCount + ' skipped';
+    }
+    console.log(msg);
+    process.exit(0);
+  }
+}
+
+handleCLI();
 
 app = createApp({
   mode: 'node',

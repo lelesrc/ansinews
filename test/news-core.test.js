@@ -499,6 +499,91 @@ describe('normalizeCatalog', function() {
   });
 });
 
+describe('exportOPML', function() {
+  it('generates valid OPML from a feed array', function() {
+    const feeds = [
+      { id: 'a', tag: 'A', name: 'Alpha Feed', url: 'https://alpha.com/rss' },
+      { id: 'b', tag: 'B', name: 'Beta Feed', url: 'https://beta.com/rss' }
+    ];
+    const opml = core.exportOPML(feeds);
+
+    assert.ok(opml.includes('<opml version="2.0">'));
+    assert.ok(opml.includes('xmlUrl="https://alpha.com/rss"'));
+    assert.ok(opml.includes('xmlUrl="https://beta.com/rss"'));
+    assert.ok(opml.includes('text="Alpha Feed"'));
+    assert.ok(opml.includes('text="Beta Feed"'));
+  });
+
+  it('escapes XML special characters in attributes', function() {
+    const feeds = [
+      { id: 'x', tag: 'X', name: 'News & "Stuff"', url: 'https://example.com/rss?a=1&b=2' }
+    ];
+    const opml = core.exportOPML(feeds);
+
+    assert.ok(opml.includes('text="News &amp; &quot;Stuff&quot;"'));
+    assert.ok(opml.includes('xmlUrl="https://example.com/rss?a=1&amp;b=2"'));
+  });
+
+  it('returns valid OPML for empty feed array', function() {
+    const opml = core.exportOPML([]);
+    assert.ok(opml.includes('<body>'));
+    assert.ok(opml.includes('</body>'));
+    assert.ok(!opml.includes('<outline'));
+  });
+});
+
+describe('parseOPML', function() {
+  it('extracts feeds from OPML with xmlUrl attributes', function() {
+    const opml = [
+      '<?xml version="1.0"?>',
+      '<opml version="2.0"><head><title>Test</title></head><body>',
+      '<outline type="rss" text="Feed One" title="Feed One" xmlUrl="https://one.com/rss" />',
+      '<outline type="rss" text="Feed Two" xmlUrl="https://two.com/rss" />',
+      '</body></opml>'
+    ].join('\n');
+
+    const feeds = core.parseOPML(opml);
+    assert.equal(feeds.length, 2);
+    assert.equal(feeds[0].name, 'Feed One');
+    assert.equal(feeds[0].url, 'https://one.com/rss');
+    assert.equal(feeds[1].name, 'Feed Two');
+    assert.equal(feeds[1].url, 'https://two.com/rss');
+  });
+
+  it('prefers title over text attribute for feed name', function() {
+    const opml = '<opml><body><outline text="Short" title="Full Name" xmlUrl="https://x.com/rss" /></body></opml>';
+    const feeds = core.parseOPML(opml);
+    assert.equal(feeds[0].name, 'Full Name');
+  });
+
+  it('handles escaped XML entities in attributes', function() {
+    const opml = '<opml><body><outline text="A &amp; B" xmlUrl="https://x.com/rss?a=1&amp;b=2" /></body></opml>';
+    const feeds = core.parseOPML(opml);
+    assert.equal(feeds[0].name, 'A & B');
+    assert.equal(feeds[0].url, 'https://x.com/rss?a=1&b=2');
+  });
+
+  it('returns empty array for empty or malformed input', function() {
+    assert.deepEqual(core.parseOPML(''), []);
+    assert.deepEqual(core.parseOPML('<opml><body></body></opml>'), []);
+    assert.deepEqual(core.parseOPML('not xml at all'), []);
+  });
+
+  it('round-trips through exportOPML and parseOPML', function() {
+    const original = [
+      { id: 'a', tag: 'A', name: 'Alpha', url: 'https://alpha.com/rss' },
+      { id: 'b', tag: 'B', name: 'Beta & Co', url: 'https://beta.com/feed?x=1&y=2' }
+    ];
+    const parsed = core.parseOPML(core.exportOPML(original));
+
+    assert.equal(parsed.length, 2);
+    assert.equal(parsed[0].name, 'Alpha');
+    assert.equal(parsed[0].url, 'https://alpha.com/rss');
+    assert.equal(parsed[1].name, 'Beta & Co');
+    assert.equal(parsed[1].url, 'https://beta.com/feed?x=1&y=2');
+  });
+});
+
 describe('getCatalogMap', function() {
   it('creates an id-to-feed lookup map', function() {
     const feeds = [

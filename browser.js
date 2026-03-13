@@ -416,6 +416,52 @@
     }
   }
 
+  function exportFeeds() {
+    var feeds = app.getConfig().feeds;
+    var opml = core.exportOPML(feeds);
+    var blob = new Blob([opml], { type: 'text/xml' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'ansinews-feeds.opml';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    app.setStatus('Exported ' + feeds.length + ' feeds.');
+  }
+
+  function importFeeds(file) {
+    var reader = new FileReader();
+    reader.onload = function() {
+      var raw = reader.result;
+      var feeds;
+      try {
+        var parsed = JSON.parse(raw);
+        feeds = Array.isArray(parsed.feeds) ? parsed.feeds : Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        feeds = core.parseOPML(raw);
+      }
+      if (!feeds.length) {
+        app.setStatus('No valid feeds found in file.');
+        return;
+      }
+      var result = core.normalizeFeeds(feeds);
+      if (!result.feeds.length) {
+        app.setStatus('All feeds in file were invalid.');
+        return;
+      }
+      var config = core.normalizeConfig({ active: 'all', feeds: result.feeds });
+      var msg = 'Imported ' + config.feeds.length + ' feeds.';
+      if (result.invalidCount) { msg += ' ' + result.invalidCount + ' skipped.'; }
+      app.replaceConfig({ active: config.active, feeds: config.feeds }, { refresh: true }).then(function() {
+        closeEditor();
+        app.setStatus(msg);
+      });
+    };
+    reader.readAsText(file);
+  }
+
   function captureFocus() {
     const active = document.activeElement;
 
@@ -533,6 +579,9 @@
         + '</div>'
         + '<div class="cfg-actions">'
           + '<div class="cfg-actions-note">' + (hasLocalStorage ? 'Saved in browser storage.' : 'Saved for this session only.') + '</div>'
+          + '<button class="cfg-io" type="button"' + (editorState.saving ? ' disabled' : '') + ' data-io="export">export</button>'
+          + '<button class="cfg-io" type="button"' + (editorState.saving ? ' disabled' : '') + ' data-io="import">import</button>'
+          + '<input class="cfg-import-file" type="file" accept=".opml,.xml,.json" style="display:none">'
           + '<div class="cfg-spacer"></div>'
           + '<button class="cfg-cancel" type="button"' + (editorState.saving ? ' disabled' : '') + '>cancel</button>'
           + '<button class="cfg-save" type="button"' + (editorState.saving ? ' disabled' : '') + '>' + (editorState.saving ? 'saving...' : 'save') + '</button>'
@@ -721,6 +770,21 @@
         return;
       }
 
+      var ioButton = event.target.closest('.cfg-io[data-io]');
+      if (ioButton && !editorState.saving) {
+        var action = ioButton.getAttribute('data-io');
+        if (action === 'export') {
+          exportFeeds();
+        } else if (action === 'import') {
+          var fileInput = document.querySelector('.cfg-import-file');
+          if (fileInput) {
+            fileInput.value = '';
+            fileInput.click();
+          }
+        }
+        return;
+      }
+
       if (editorState.open && event.target.closest('.cfg-panel')) {
         return;
       }
@@ -757,11 +821,15 @@
     document.addEventListener('change', function(event) {
       const checkbox = event.target.closest('.cfg-check[data-feed-id]');
 
-      if (!checkbox) {
+      if (checkbox) {
+        setFeedSelection(checkbox.getAttribute('data-feed-id'), checkbox.checked);
         return;
       }
 
-      setFeedSelection(checkbox.getAttribute('data-feed-id'), checkbox.checked);
+      var fileInput = event.target.closest('.cfg-import-file');
+      if (fileInput && fileInput.files && fileInput.files[0]) {
+        importFeeds(fileInput.files[0]);
+      }
     });
 
     window.addEventListener('resize', function() {
