@@ -8,7 +8,7 @@ const cp = require('child_process');
 const http = require('http');
 const https = require('https');
 
-const { createApp, VERSION, moveCursor } = require('./news-core.js');
+const { createApp, VERSION, moveCursor, trimText, makeSlug, cloneFeed, cloneFeeds, sameFeed, normalizeCatalogFeed, normalizeCatalog, getCatalogMap } = require('./news-core.js');
 
 const DEFAULT_FEEDS_PATH = path.join(__dirname, 'default_feeds.json');
 
@@ -81,106 +81,6 @@ function tabSegment(label, tab, activeId) {
   return A.dim + label + '|' + A.rBg;
 }
 
-function trimText(value, maxLength) {
-  const text = String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
-  return maxLength ? text.substring(0, maxLength) : text;
-}
-
-function slugify(value) {
-  const slug = trimText(value, 60)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-
-  return slug || 'feed';
-}
-
-function cloneFeed(feed) {
-  return {
-    id: feed.id || '',
-    tag: feed.tag || '',
-    name: feed.name || '',
-    url: feed.url || ''
-  };
-}
-
-function cloneFeeds(feeds) {
-  return (feeds || []).map(cloneFeed);
-}
-
-function normalizeCatalogFeed(feed, usedIds) {
-  if (!feed || typeof feed !== 'object') {
-    return null;
-  }
-
-  const name = trimText(feed.name, 80);
-  const url = trimText(feed.url, 500);
-  const category = trimText(feed.category, 16) || 'OTHER';
-  let tag = trimText(feed.tag, 12).toUpperCase();
-  let id = trimText(feed.id, 40).toLowerCase().replace(/[^a-z0-9-]/g, '-');
-
-  if (!name || !url || !/^https?:\/\//i.test(url)) {
-    return null;
-  }
-
-  if (!tag) {
-    tag = trimText(name, 5).toUpperCase();
-  }
-
-  tag = tag.replace(/[^A-Z0-9]/g, '').substring(0, 5) || 'FEED';
-  id = id.replace(/-+/g, '-').replace(/^-+|-+$/g, '');
-
-  if (!id) {
-    id = slugify(tag || name);
-  }
-
-  if (usedIds[id]) {
-    return null;
-  }
-
-  usedIds[id] = true;
-
-  return {
-    id: id,
-    tag: tag,
-    name: name,
-    url: url,
-    category: category
-  };
-}
-
-function normalizeCatalog(feeds) {
-  const list = Array.isArray(feeds) ? feeds : [];
-  const usedIds = Object.create(null);
-  const normalized = [];
-
-  list.forEach(function(feed) {
-    const normalizedFeed = normalizeCatalogFeed(feed, usedIds);
-    if (normalizedFeed) {
-      normalized.push(normalizedFeed);
-    }
-  });
-
-  return normalized;
-}
-
-function getCatalogMap(feeds) {
-  const map = Object.create(null);
-
-  (feeds || []).forEach(function(feed) {
-    map[feed.id] = feed;
-  });
-
-  return map;
-}
-
-function sameFeed(left, right) {
-  return !!left && !!right
-    && left.id === right.id
-    && left.tag === right.tag
-    && left.name === right.name
-    && left.url === right.url;
-}
 
 function loadCatalog() {
   try {

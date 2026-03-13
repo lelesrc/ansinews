@@ -406,3 +406,108 @@ describe('createApp', function() {
     ]);
   });
 });
+
+describe('cloneFeed', function() {
+  it('returns a shallow copy with default empty strings for missing fields', function() {
+    const original = { id: 'test', tag: 'TST', name: 'Test', url: 'http://example.com' };
+    const clone = core.cloneFeed(original);
+    assert.deepEqual(clone, original);
+    assert.notEqual(clone, original);
+
+    const partial = { id: 'x' };
+    const result = core.cloneFeed(partial);
+    assert.equal(result.tag, '');
+    assert.equal(result.name, '');
+    assert.equal(result.url, '');
+  });
+});
+
+describe('sameFeed', function() {
+  it('returns true for identical feeds and false for mismatches or nulls', function() {
+    const a = { id: 'f', tag: 'F', name: 'Feed', url: 'http://a.com' };
+    const b = { id: 'f', tag: 'F', name: 'Feed', url: 'http://a.com' };
+    assert.equal(core.sameFeed(a, b), true);
+
+    assert.equal(core.sameFeed(a, { id: 'f', tag: 'F', name: 'Feed', url: 'http://b.com' }), false);
+    assert.equal(core.sameFeed(null, a), false);
+    assert.equal(core.sameFeed(a, null), false);
+    assert.equal(core.sameFeed(null, null), false);
+  });
+});
+
+describe('normalizeCatalogFeed', function() {
+  it('normalizes a valid feed with all fields', function() {
+    const usedIds = Object.create(null);
+    const result = core.normalizeCatalogFeed({
+      id: 'my-feed',
+      tag: 'MF',
+      name: 'My Feed',
+      url: 'https://example.com/rss',
+      category: 'Tech'
+    }, usedIds);
+
+    assert.deepEqual(result, {
+      id: 'my-feed',
+      tag: 'MF',
+      name: 'My Feed',
+      url: 'https://example.com/rss',
+      category: 'Tech'
+    });
+    assert.equal(usedIds['my-feed'], true);
+  });
+
+  it('returns null for invalid input', function() {
+    const usedIds = Object.create(null);
+    assert.equal(core.normalizeCatalogFeed(null, usedIds), null);
+    assert.equal(core.normalizeCatalogFeed({ name: 'No URL' }, usedIds), null);
+    assert.equal(core.normalizeCatalogFeed({ name: 'Bad', url: 'not-a-url' }, usedIds), null);
+  });
+
+  it('rejects duplicate ids', function() {
+    const usedIds = Object.create(null);
+    const feed = { id: 'dup', name: 'Feed', url: 'https://a.com/rss' };
+    assert.ok(core.normalizeCatalogFeed(feed, usedIds));
+    assert.equal(core.normalizeCatalogFeed(feed, usedIds), null);
+  });
+
+  it('defaults category to Other', function() {
+    const usedIds = Object.create(null);
+    const result = core.normalizeCatalogFeed({
+      id: 'cat-test', name: 'Test', url: 'https://x.com/rss'
+    }, usedIds);
+    assert.equal(result.category, 'Other');
+  });
+});
+
+describe('normalizeCatalog', function() {
+  it('normalizes an array of feeds and skips invalid entries', function() {
+    const feeds = [
+      { id: 'a', name: 'A', url: 'https://a.com/rss' },
+      null,
+      { id: 'b', name: 'B', url: 'invalid' },
+      { id: 'c', name: 'C', url: 'https://c.com/rss' }
+    ];
+    const result = core.normalizeCatalog(feeds);
+    assert.equal(result.length, 2);
+    assert.equal(result[0].id, 'a');
+    assert.equal(result[1].id, 'c');
+  });
+
+  it('returns empty array for non-array input', function() {
+    assert.deepEqual(core.normalizeCatalog(null), []);
+    assert.deepEqual(core.normalizeCatalog('hello'), []);
+  });
+});
+
+describe('getCatalogMap', function() {
+  it('creates an id-to-feed lookup map', function() {
+    const feeds = [
+      { id: 'x', name: 'X' },
+      { id: 'y', name: 'Y' }
+    ];
+    const map = core.getCatalogMap(feeds);
+    assert.equal(map.x.name, 'X');
+    assert.equal(map.y.name, 'Y');
+    assert.equal(map.z, undefined);
+  });
+});

@@ -54,88 +54,14 @@
     }
   }
 
-  function trimText(value, maxLength) {
-    const text = String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
-    return maxLength ? text.substring(0, maxLength) : text;
-  }
+  const trimText = core.trimText;
+  const makeSlug = core.makeSlug;
 
-  function slugify(value) {
-    const slug = trimText(value, 60)
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-
-    return slug || 'feed';
-  }
-
-  function cloneFeed(feed) {
-    return {
-      id: feed.id || '',
-      tag: feed.tag || '',
-      name: feed.name || '',
-      url: feed.url || ''
-    };
-  }
-
-  function cloneFeeds(feeds) {
-    return (feeds || []).map(cloneFeed);
-  }
-
-  function normalizeCatalogFeed(feed, usedIds) {
-    if (!feed || typeof feed !== 'object') {
-      return null;
-    }
-
-    const name = trimText(feed.name, 80);
-    const url = trimText(feed.url, 500);
-    const category = trimText(feed.category, 40) || 'Other';
-    let tag = trimText(feed.tag, 12).toUpperCase();
-    let id = trimText(feed.id, 40).toLowerCase().replace(/[^a-z0-9-]/g, '-');
-
-    if (!name || !url || !/^https?:\/\//i.test(url)) {
-      return null;
-    }
-
-    if (!tag) {
-      tag = trimText(name, 5).toUpperCase();
-    }
-
-    tag = tag.replace(/[^A-Z0-9]/g, '').substring(0, 5) || 'FEED';
-    id = id.replace(/-+/g, '-').replace(/^-+|-+$/g, '');
-
-    if (!id) {
-      id = slugify(tag || name);
-    }
-
-    if (usedIds[id]) {
-      return null;
-    }
-
-    usedIds[id] = true;
-
-    return {
-      id: id,
-      tag: tag,
-      name: name,
-      url: url,
-      category: category
-    };
-  }
-
-  function normalizeCatalog(feeds) {
-    const list = Array.isArray(feeds) ? feeds : [];
-    const usedIds = Object.create(null);
-    const normalized = [];
-
-    list.forEach(function(feed) {
-      const normalizedFeed = normalizeCatalogFeed(feed, usedIds);
-      if (normalizedFeed) {
-        normalized.push(normalizedFeed);
-      }
-    });
-
-    return normalized;
-  }
+  const cloneFeed = core.cloneFeed;
+  const cloneFeeds = core.cloneFeeds;
+  const sameFeed = core.sameFeed;
+  const normalizeCatalog = core.normalizeCatalog;
+  const getCatalogMap = core.getCatalogMap;
 
   function readStoredValue() {
     if (hasLocalStorage) {
@@ -186,26 +112,8 @@
     window.open(url, '_blank', 'noopener,noreferrer');
   }
 
-  function getCatalogMap() {
-    const map = Object.create(null);
-
-    editorState.catalog.forEach(function(feed) {
-      map[feed.id] = feed;
-    });
-
-    return map;
-  }
-
-  function sameFeed(left, right) {
-    return !!left && !!right
-      && left.id === right.id
-      && left.tag === right.tag
-      && left.name === right.name
-      && left.url === right.url;
-  }
-
   function reconcileCustomFeeds() {
-    const catalogMap = getCatalogMap();
+    const catalogMap = getCatalogMap(editorState.catalog);
 
     editorState.customFeeds = editorState.customFeeds.filter(function(feed) {
       return !sameFeed(feed, catalogMap[feed.id]);
@@ -213,7 +121,7 @@
   }
 
   function seedDraftSelection(feeds) {
-    const catalogMap = getCatalogMap();
+    const catalogMap = getCatalogMap(editorState.catalog);
     const selectedIds = Object.create(null);
     const customFeeds = [];
 
@@ -280,6 +188,10 @@
     editorState.search = '';
     editorState.cursor = 0;
     seedDraftSelection(app.getConfig().feeds);
+    if (editorState.catalogStatus === 'error') {
+      editorState.catalogStatus = 'idle';
+      catalogRequest = null;
+    }
     ensureCatalogLoaded();
     editorState.dirty = true;
     app.render();

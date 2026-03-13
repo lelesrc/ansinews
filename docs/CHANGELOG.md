@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-03-13
+
 ### Added
 
 - MCP server (`mcp.js`) exposes four tools over stdio JSON-RPC 2.0: `list_feeds`, `add_feed`, `remove_feed`, `read_news`. Zero dependencies, shares config and RSS parsing with the terminal shell.
@@ -13,9 +15,12 @@
 
 - Terminal rendering no longer flickers on refresh; full-screen erase replaced with cursor-home rewrite.
 - Browser feed editor scroll position no longer resets on the 1-second render tick; the overlay DOM is preserved when unchanged.
+- Browser feed editor now retries catalog loading on reopen after a network failure.
 
 ### Changed
 
+- Consolidated shared utility functions (`trimText`, `makeSlug`, `cloneFeed`, `cloneFeeds`, `sameFeed`, `normalizeCatalogFeed`, `normalizeCatalog`, `getCatalogMap`) from both shells into the core, removing ~150 lines of duplicated code and unifying inconsistent defaults.
+- Catalog feed category default is now `Other` (was `OTHER` in terminal); category length limit is now 40 characters in both shells.
 - Terminal feed tabs, detail panel, and hint bar now use subtle background fills for clearer visual hierarchy.
 - Errored feed tabs are shown in bold red for better visibility against the new background.
 - Terminal tabs line now windows gracefully when feeds overflow the terminal width, showing `<` / `>` indicators for hidden tabs.

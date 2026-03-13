@@ -9,7 +9,7 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function() {
   'use strict';
 
-  const VERSION = '0.1.0';
+  const VERSION = '0.2.0';
   const REFRESH_MS = 5 * 60 * 1000;
   const MAX_ITEMS = 50;
   const PREF_KEY = 'ansinews';
@@ -187,6 +187,93 @@
       .replace(/^-+|-+$/g, '');
 
     return slug || 'feed';
+  }
+
+  function cloneFeed(feed) {
+    return {
+      id: feed.id || '',
+      tag: feed.tag || '',
+      name: feed.name || '',
+      url: feed.url || ''
+    };
+  }
+
+  function cloneFeeds(feeds) {
+    return (feeds || []).map(cloneFeed);
+  }
+
+  function sameFeed(left, right) {
+    return !!left && !!right
+      && left.id === right.id
+      && left.tag === right.tag
+      && left.name === right.name
+      && left.url === right.url;
+  }
+
+  function normalizeCatalogFeed(feed, usedIds) {
+    if (!feed || typeof feed !== 'object') {
+      return null;
+    }
+
+    var name = trimText(feed.name, 80);
+    var url = trimText(feed.url, 500);
+    var category = trimText(feed.category, 40) || 'Other';
+    var tag = trimText(feed.tag, 12).toUpperCase();
+    var id = trimText(feed.id, 40).toLowerCase().replace(/[^a-z0-9-]/g, '-');
+
+    if (!name || !url || !/^https?:\/\//i.test(url)) {
+      return null;
+    }
+
+    if (!tag) {
+      tag = trimText(name, 5).toUpperCase();
+    }
+
+    tag = tag.replace(/[^A-Z0-9]/g, '').substring(0, 5) || 'FEED';
+    id = id.replace(/-+/g, '-').replace(/^-+|-+$/g, '');
+
+    if (!id) {
+      id = makeSlug(tag || name);
+    }
+
+    if (usedIds[id]) {
+      return null;
+    }
+
+    usedIds[id] = true;
+
+    return {
+      id: id,
+      tag: tag,
+      name: name,
+      url: url,
+      category: category
+    };
+  }
+
+  function normalizeCatalog(feeds) {
+    var list = Array.isArray(feeds) ? feeds : [];
+    var usedIds = Object.create(null);
+    var normalized = [];
+
+    list.forEach(function(feed) {
+      var normalizedFeed = normalizeCatalogFeed(feed, usedIds);
+      if (normalizedFeed) {
+        normalized.push(normalizedFeed);
+      }
+    });
+
+    return normalized;
+  }
+
+  function getCatalogMap(feeds) {
+    var map = Object.create(null);
+
+    (feeds || []).forEach(function(feed) {
+      map[feed.id] = feed;
+    });
+
+    return map;
   }
 
   function getDefaultStyle(feedId, index) {
@@ -852,6 +939,14 @@
     parseRSS: parseRSS,
     createApp: createApp,
     normalizeConfig: normalizeConfig,
-    moveCursor: moveCursor
+    moveCursor: moveCursor,
+    trimText: trimText,
+    makeSlug: makeSlug,
+    cloneFeed: cloneFeed,
+    cloneFeeds: cloneFeeds,
+    sameFeed: sameFeed,
+    normalizeCatalogFeed: normalizeCatalogFeed,
+    normalizeCatalog: normalizeCatalog,
+    getCatalogMap: getCatalogMap
   };
 });
