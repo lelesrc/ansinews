@@ -24,14 +24,13 @@
     { ansi: '\x1b[32m', css: '#4ade80' },
     { ansi: '\x1b[31m', css: '#f87171' }
   ];
-  const DEFAULT_FEEDS = [
-    { id: 'bbc', tag: 'BBC', name: 'BBC News', url: 'https://feeds.bbci.co.uk/news/rss.xml' },
-    { id: 'grd', tag: 'GUARD', name: 'The Guardian', url: 'https://www.theguardian.com/world/rss' },
-    { id: 'nyt', tag: 'NYT', name: 'NY Times', url: 'https://rss.nytimes.com/services/xml/rss/nit/HomePage.xml' },
-    { id: 'hn', tag: 'HN', name: 'Hacker News', url: 'https://hnrss.org/frontpage' },
-    { id: 'npr', tag: 'NPR', name: 'NPR News', url: 'https://feeds.npr.org/1001/rss.xml' },
-    { id: 'rtr', tag: 'RTR', name: 'Reuters', url: 'https://feeds.reuters.com/reuters/topNews' }
-  ];
+  var defaultFeeds = [];
+
+  function setDefaultFeeds(catalog) {
+    var list = Array.isArray(catalog) ? catalog : [];
+    var defaults = list.filter(function(f) { return f && f['default']; });
+    defaultFeeds = defaults.length ? defaults : list.slice(0, 6);
+  }
 
   const tagPatternCache = new Map();
 
@@ -277,7 +276,7 @@
   }
 
   function getDefaultStyle(feedId, index) {
-    const matchedIndex = DEFAULT_FEEDS.findIndex(function(feed) {
+    const matchedIndex = defaultFeeds.findIndex(function(feed) {
       return feed.id === feedId;
     });
     const styleIndex = matchedIndex >= 0 ? matchedIndex : index % FEED_STYLES.length;
@@ -410,7 +409,7 @@
   function getDefaultConfig() {
     return {
       active: 'all',
-      feeds: DEFAULT_FEEDS.map(function(feed) {
+      feeds: defaultFeeds.map(function(feed) {
         return {
           id: feed.id,
           tag: feed.tag,
@@ -991,8 +990,8 @@
     MAX_ITEMS: MAX_ITEMS,
     PREF_KEY: PREF_KEY,
     CORS_PROXY: CORS_PROXY,
-    FEEDS: DEFAULT_FEEDS,
-    DEFAULT_FEEDS: DEFAULT_FEEDS,
+    setDefaultFeeds: setDefaultFeeds,
+    getDefaultConfig: getDefaultConfig,
     parseRSS: parseRSS,
     createApp: createApp,
     normalizeConfig: normalizeConfig,

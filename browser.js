@@ -159,10 +159,15 @@
       }
       return response.json();
     }).then(function(data) {
+      core.setDefaultFeeds(data);
       editorState.catalog = normalizeCatalog(data);
 
       if (!editorState.catalog.length) {
         throw new Error('No valid feeds in default_feeds.json.');
+      }
+
+      if (!app.getConfig().feeds.length) {
+        app.replaceConfig({ active: 'all', feeds: core.getDefaultConfig().feeds }, { refresh: true });
       }
 
       editorState.catalogStatus = 'loaded';

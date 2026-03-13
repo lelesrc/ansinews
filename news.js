@@ -8,7 +8,7 @@ const cp = require('child_process');
 const http = require('http');
 const https = require('https');
 
-const { createApp, VERSION, moveCursor, trimText, makeSlug, cloneFeed, cloneFeeds, sameFeed, normalizeCatalogFeed, normalizeCatalog, getCatalogMap, exportOPML, parseOPML, normalizeConfig, normalizeFeeds } = require('./news-core.js');
+const { createApp, VERSION, setDefaultFeeds, moveCursor, trimText, makeSlug, cloneFeed, cloneFeeds, sameFeed, normalizeCatalogFeed, normalizeCatalog, getCatalogMap, exportOPML, parseOPML, normalizeConfig, normalizeFeeds } = require('./news-core.js');
 
 const DEFAULT_FEEDS_PATH = path.join(__dirname, 'default_feeds.json');
 
@@ -822,6 +822,8 @@ function handleCLI() {
 }
 
 handleCLI();
+
+setDefaultFeeds(loadCatalog().feeds);
 
 app = createApp({
   mode: 'node',

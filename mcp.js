@@ -7,7 +7,12 @@ const path = require('path');
 const http = require('http');
 const https = require('https');
 
-const { normalizeConfig, parseRSS, VERSION } = require('./news-core.js');
+const { normalizeConfig, parseRSS, VERSION, setDefaultFeeds, normalizeCatalog } = require('./news-core.js');
+
+const DEFAULT_FEEDS_PATH = path.join(__dirname, 'default_feeds.json');
+try {
+  setDefaultFeeds(normalizeCatalog(JSON.parse(fs.readFileSync(DEFAULT_FEEDS_PATH, 'utf8'))));
+} catch (e) { /* catalog unavailable */ }
 
 // ---------------------------------------------------------------------------
 // Config I/O (same paths and priority as news.js)

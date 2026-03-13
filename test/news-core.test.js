@@ -3,7 +3,12 @@
 const assert = require('node:assert/strict');
 const { describe, it } = require('node:test');
 
+const fs = require('node:fs');
+const path = require('node:path');
 const core = require('../news-core.js');
+
+const catalogPath = path.join(__dirname, '..', 'default_feeds.json');
+core.setDefaultFeeds(core.normalizeCatalog(JSON.parse(fs.readFileSync(catalogPath, 'utf8'))));
 
 function makeRSS(items) {
   return '<?xml version="1.0" encoding="UTF-8"?>'
@@ -81,7 +86,7 @@ describe('normalizeConfig', function() {
 
     assert.equal(config.active, 'all');
     assert.equal(config.notice, '');
-    assert.deepEqual(config.feeds, core.DEFAULT_FEEDS);
+    assert.deepEqual(config.feeds, core.getDefaultConfig().feeds);
   });
 
   it('keeps valid feeds, drops invalid feeds, and normalizes ids and tags', function() {
@@ -114,7 +119,7 @@ describe('normalizeConfig', function() {
 
     assert.equal(config.active, 'all');
     assert.equal(config.notice, 'Invalid feeds config. Using defaults.');
-    assert.deepEqual(config.feeds, core.DEFAULT_FEEDS);
+    assert.deepEqual(config.feeds, core.getDefaultConfig().feeds);
   });
 });
 
