@@ -20,6 +20,7 @@
     catalogStatus: 'idle',
     catalogError: '',
     dirty: false,
+    cursorMoved: false,
     cursor: 0,
     addUrl: '',
     addName: ''
@@ -315,6 +316,7 @@
     if (moved !== null) {
       editorState.cursor = moved;
       editorState.dirty = true;
+      editorState.cursorMoved = true;
       app.render();
       return;
     }
@@ -325,6 +327,12 @@
         if (feeds[editorState.cursor]) {
           var feedId = feeds[editorState.cursor].id;
           setFeedSelection(feedId, !editorState.selectedIds[feedId]);
+        }
+        return;
+      case 'Delete':
+        var delFeeds = buildFlatFeeds();
+        if (delFeeds[editorState.cursor]) {
+          removeFeed(delFeeds[editorState.cursor].id);
         }
         return;
       case '/':
@@ -349,6 +357,21 @@
       delete editorState.selectedIds[feedId];
     }
 
+    editorState.dirty = true;
+    app.render();
+  }
+
+  function removeFeed(feedId) {
+    delete editorState.selectedIds[feedId];
+    editorState.customFeeds = editorState.customFeeds.filter(function(f) {
+      return f.id !== feedId;
+    });
+    var flat = buildFlatFeeds();
+    if (flat.length === 0) {
+      editorState.cursor = 0;
+    } else if (editorState.cursor >= flat.length) {
+      editorState.cursor = flat.length - 1;
+    }
     editorState.dirty = true;
     app.render();
   }
@@ -596,6 +619,8 @@
             + '<span class="cfg-feed-name">' + escAttr(feed.name) + '</span>'
             + '<span class="cfg-feed-url">' + escAttr(feed.url) + '</span>'
           + '</span>'
+          + '<button class="cfg-feed-rm" type="button" data-rm-id="' + escAttr(feed.id) + '"'
+            + (editorState.saving ? ' disabled' : '') + ' title="Remove feed">\u00d7</button>'
         + '</label>';
       }).join('');
 
@@ -617,7 +642,7 @@
       + '<div class="cfg-panel">'
         + '<div class="cfg-header">'
           + '<div class="cfg-title">FEEDS</div>'
-          + '<div class="cfg-subtitle">[&#x2191;&#x2193; jk] nav  [space] toggle  [/] filter  [enter] save  [esc] close</div>'
+          + '<div class="cfg-subtitle">[&#x2191;&#x2193; jk] nav  [space] toggle  [del] remove  [/] filter  [enter] save  [esc] close</div>'
         + '</div>'
         + '<div class="cfg-toolbar">'
           + '<input class="cfg-search cfg-focus" data-focus-key="search" type="text" value="' + escAttr(editorState.search)
@@ -658,7 +683,9 @@
 
     const focusSnapshot = captureFocus();
     const dirty = editorState.dirty;
+    const cursorMoved = editorState.cursorMoved;
     editorState.dirty = false;
+    editorState.cursorMoved = false;
 
     const esc = view.meta.esc;
     const tabsHTML = view.tabs.map(function(tab, index) {
@@ -756,7 +783,7 @@
       }
 
       var focusedRow = terminal.querySelector('.cfg-row-focus');
-      if (focusedRow && !scrollSnapshot) {
+      if (focusedRow && cursorMoved) {
         focusedRow.scrollIntoView({ block: 'nearest' });
       }
     }
@@ -798,7 +825,7 @@
           return;
         }
 
-        if (!searchFocused && [' ', 'ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', '/'].includes(event.key)) {
+        if (!searchFocused && [' ', 'ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', '/', 'Delete'].includes(event.key)) {
           event.preventDefault();
         }
 
@@ -836,6 +863,13 @@
 
       if (saveButton && !editorState.saving) {
         saveDraft();
+        return;
+      }
+
+      var rmBtn = event.target.closest('.cfg-feed-rm[data-rm-id]');
+      if (rmBtn && !editorState.saving) {
+        event.preventDefault();
+        removeFeed(rmBtn.getAttribute('data-rm-id'));
         return;
       }
 

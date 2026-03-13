@@ -5,6 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ANSINEWS v0.2.0</title>
   <style>
+    /* ── Font: IBM Plex Mono (SIL OFL 1.1) ─────────────── */
+    @font-face {
+      font-family: 'IBM Plex Mono';
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url(fonts/IBMPlexMono-Regular.woff2) format('woff2');
+    }
+    @font-face {
+      font-family: 'IBM Plex Mono';
+      font-style: normal;
+      font-weight: 700;
+      font-display: swap;
+      src: url(fonts/IBMPlexMono-Bold.woff2) format('woff2');
+    }
+
     /* ── Reset & Base ───────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -28,8 +44,7 @@
     body {
       background: var(--bg);
       color: var(--text);
-      font-family: 'Cascadia Code', 'JetBrains Mono', 'Fira Code',
-                   'SF Mono', 'Consolas', 'Monaco', 'Courier New', monospace;
+      font-family: 'IBM Plex Mono', 'SF Mono', 'Consolas', 'Courier New', monospace;
       font-size: 13px;
       line-height: 1.55;
       height: 100dvh;
@@ -436,7 +451,7 @@
     }
     .cfg-feed-row {
       display: grid;
-      grid-template-columns: 20px 56px minmax(0, 1fr);
+      grid-template-columns: 20px 56px minmax(0, 1fr) 24px;
       gap: 8px;
       align-items: start;
       padding: 9px 10px;
@@ -487,6 +502,28 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+    .cfg-feed-rm {
+      background: none;
+      border: none;
+      color: transparent;
+      font: inherit;
+      font-size: 13px;
+      line-height: 1;
+      padding: 0;
+      cursor: pointer;
+      text-align: center;
+      transition: color 0.1s;
+    }
+    .cfg-feed-row:hover .cfg-feed-rm,
+    .cfg-row-focus .cfg-feed-rm {
+      color: var(--dim);
+    }
+    .cfg-feed-rm:hover {
+      color: var(--red);
+    }
+    .cfg-feed-rm:disabled {
+      visibility: hidden;
+    }
     .cfg-io {
       color: var(--muted);
     }
@@ -535,7 +572,7 @@
         display: none;
       }
       .cfg-feed-row {
-        grid-template-columns: 20px 48px minmax(0, 1fr);
+        grid-template-columns: 20px 48px minmax(0, 1fr) 24px;
       }
       .cfg-actions-note {
         width: 100%;
