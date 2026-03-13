@@ -42,6 +42,7 @@ Open `index.html` in any modern browser. No server required.
 | `↓` `j` | Move down |
 | `PgUp` `PgDn` | Scroll by page |
 | `Home` `g` / `End` `G` | Jump to start / end |
+| `←` `→` `h` `l` | Cycle feed tabs |
 | `0`–`9` | Switch feed tab (0 = ALL) |
 | `Enter` `Space` | Open detail view |
 | `Esc` | Close detail / clear filter |
@@ -72,6 +73,7 @@ news-core.js    shared core — feeds, RSS parsing, state, commands, view model
 news.js         terminal shell — ANSI rendering, keyboard input, file I/O
 browser.js      browser shell — DOM rendering, localStorage, click/key handling
 index.html      browser container and CSS
+mcp.js          MCP server — exposes feed tools over stdio JSON-RPC 2.0
 ```
 
 The core handles everything platform-independent. Each shell is a thin adapter for its environment. No code is shared between the shells except through the core.

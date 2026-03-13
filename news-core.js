@@ -35,6 +35,11 @@
 
   const tagPatternCache = new Map();
 
+  /**
+   * Parse an RSS/Atom XML string into a flat array of feed items.
+   * @param {string} xml - Raw XML response body
+   * @returns {Array<{title: string, link: string, desc: string, date: Date, author: string}>}
+   */
   function parseRSS(xml) {
     function readTag(source, tagName) {
       let pattern = tagPatternCache.get(tagName);
@@ -272,6 +277,11 @@
     };
   }
 
+  /**
+   * Validate and normalize a raw config object into a safe, usable form.
+   * @param {Object} rawConfig - Raw config (may be malformed or missing fields)
+   * @returns {{active: string, feeds: Array, notice: string}}
+   */
   function normalizeConfig(rawConfig) {
     const config = rawConfig && typeof rawConfig === 'object' ? rawConfig : {};
     const result = normalizeFeeds(config.feeds);
@@ -334,6 +344,13 @@
     };
   }
 
+  /**
+   * Compute the next cursor position for a navigation key press.
+   * @param {number} cursor - Current cursor index
+   * @param {string} key - Keyboard event key name (e.g. 'ArrowUp', 'j', 'PageDown')
+   * @param {number} maxIdx - Maximum valid cursor index
+   * @returns {number|null} New cursor index, or null if the key is not a navigation key
+   */
   function moveCursor(cursor, key, maxIdx) {
     switch (key) {
       case 'ArrowUp': case 'k':   return Math.max(0, cursor - 1);
@@ -346,6 +363,12 @@
     }
   }
 
+  /**
+   * Create an application instance bound to a platform adapter.
+   * @param {Object} platform - Platform adapter with fetchXML(), render(), and optional loadPrefs/savePrefs/openURL/quit
+   * @returns {Object} App API with state, getView, handleKey, start, refreshAll, and other control methods
+   * @throws {Error} If platform is missing required fetchXML or render methods
+   */
   function createApp(platform) {
     if (!platform || typeof platform.fetchXML !== 'function' || typeof platform.render !== 'function') {
       throw new Error('createApp requires a platform with fetchXML() and render()');

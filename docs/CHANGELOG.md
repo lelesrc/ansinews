@@ -11,6 +11,7 @@
 
 ### Fixed
 
+- Terminal rendering no longer flickers on refresh; full-screen erase replaced with cursor-home rewrite.
 - Browser feed editor scroll position no longer resets on the 1-second render tick; the overlay DOM is preserved when unchanged.
 
 ### Changed
