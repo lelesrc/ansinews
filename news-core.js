@@ -1007,6 +1007,7 @@
     getCatalogMap: getCatalogMap,
     exportOPML: exportOPML,
     parseOPML: parseOPML,
-    normalizeFeeds: normalizeFeeds
+    normalizeFeeds: normalizeFeeds,
+    normalizeFeedEntry: normalizeFeedEntry
   };
 });

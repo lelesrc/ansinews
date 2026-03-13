@@ -20,7 +20,9 @@
     catalogStatus: 'idle',
     catalogError: '',
     dirty: false,
-    cursor: 0
+    cursor: 0,
+    addUrl: '',
+    addName: ''
   };
   let catalogRequest = null;
 
@@ -187,6 +189,8 @@
     editorState.saving = false;
     editorState.search = '';
     editorState.cursor = 0;
+    editorState.addUrl = '';
+    editorState.addName = '';
     seedDraftSelection(app.getConfig().feeds);
     if (editorState.catalogStatus === 'error') {
       editorState.catalogStatus = 'idle';
@@ -201,6 +205,8 @@
     editorState.open = false;
     editorState.saving = false;
     editorState.search = '';
+    editorState.addUrl = '';
+    editorState.addName = '';
     editorState.selectedIds = Object.create(null);
     editorState.customFeeds = [];
     editorState.cursor = 0;
@@ -353,6 +359,49 @@
       });
     });
 
+    editorState.dirty = true;
+    app.render();
+  }
+
+  function addCustomFeed() {
+    var url = trimText(editorState.addUrl);
+    var name = trimText(editorState.addName);
+
+    if (!url) {
+      app.setStatus('Enter a feed URL.');
+      return;
+    }
+
+    var allFeeds = editorState.catalog.concat(editorState.customFeeds);
+    var urlLower = url.toLowerCase();
+    var duplicate = allFeeds.some(function(f) {
+      return f.url.toLowerCase() === urlLower;
+    });
+    if (duplicate) {
+      app.setStatus('Feed already exists.');
+      return;
+    }
+
+    if (!name) {
+      var match = url.match(/^https?:\/\/([^\/]+)/);
+      name = match ? match[1] : url;
+    }
+
+    var usedIds = Object.create(null);
+    editorState.catalog.forEach(function(f) { usedIds[f.id] = true; });
+    editorState.customFeeds.forEach(function(f) { usedIds[f.id] = true; });
+
+    var feed = core.normalizeFeedEntry({ name: name, url: url }, 0, usedIds);
+
+    if (!feed) {
+      app.setStatus('Invalid feed URL.');
+      return;
+    }
+
+    editorState.customFeeds.push(feed);
+    editorState.selectedIds[feed.id] = true;
+    editorState.addUrl = '';
+    editorState.addName = '';
     editorState.dirty = true;
     app.render();
   }
@@ -572,6 +621,11 @@
           + '<button class="cfg-bulk" type="button"' + (editorState.saving ? ' disabled' : '') + ' data-bulk="select">select visible</button>'
           + '<button class="cfg-bulk" type="button"' + (editorState.saving ? ' disabled' : '') + ' data-bulk="clear">clear visible</button>'
         + '</div>'
+        + '<div class="cfg-add-row">'
+          + '<input class="cfg-add-url cfg-focus" data-focus-key="add-url" type="text" placeholder="https://..." value="' + escAttr(editorState.addUrl) + '"' + (editorState.saving ? ' disabled' : '') + '>'
+          + '<input class="cfg-add-name cfg-focus" data-focus-key="add-name" type="text" placeholder="name (optional)" value="' + escAttr(editorState.addName) + '"' + (editorState.saving ? ' disabled' : '') + '>'
+          + '<button class="cfg-add-btn" type="button"' + (editorState.saving ? ' disabled' : '') + '>add</button>'
+        + '</div>'
         + '<div class="cfg-body">'
           + infoHTML
           + groupsHTML
@@ -728,6 +782,18 @@
         var terminal = rootEl();
         var searchInput = terminal && terminal.querySelector('.cfg-search');
         var searchFocused = searchInput && document.activeElement === searchInput;
+        var addInputFocused = document.activeElement &&
+          (document.activeElement.matches('.cfg-add-url') || document.activeElement.matches('.cfg-add-name'));
+
+        if (addInputFocused) {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            addCustomFeed();
+          } else if (event.key === 'Escape') {
+            document.activeElement.blur();
+          }
+          return;
+        }
 
         if (!searchFocused && [' ', 'ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', '/'].includes(event.key)) {
           event.preventDefault();
@@ -770,6 +836,12 @@
         return;
       }
 
+      var addBtn = event.target.closest('.cfg-add-btn');
+      if (addBtn && !editorState.saving) {
+        addCustomFeed();
+        return;
+      }
+
       var ioButton = event.target.closest('.cfg-io[data-io]');
       if (ioButton && !editorState.saving) {
         var action = ioButton.getAttribute('data-io');
@@ -808,14 +880,25 @@
     document.addEventListener('input', function(event) {
       const searchInput = event.target.closest('.cfg-search');
 
-      if (!searchInput) {
+      if (searchInput) {
+        editorState.search = searchInput.value;
+        editorState.cursor = 0;
+        editorState.dirty = true;
+        app.render();
         return;
       }
 
-      editorState.search = searchInput.value;
-      editorState.cursor = 0;
-      editorState.dirty = true;
-      app.render();
+      var addUrlInput = event.target.closest('.cfg-add-url');
+      if (addUrlInput) {
+        editorState.addUrl = addUrlInput.value;
+        return;
+      }
+
+      var addNameInput = event.target.closest('.cfg-add-name');
+      if (addNameInput) {
+        editorState.addName = addNameInput.value;
+        return;
+      }
     });
 
     document.addEventListener('change', function(event) {

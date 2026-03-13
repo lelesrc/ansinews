@@ -7,6 +7,7 @@
 - Import/export feeds in OPML (industry standard) and JSON formats.
 - Terminal: `--export <path>` and `--import <path>` CLI flags for non-interactive feed backup, restore, and migration. `--help` flag documents usage.
 - Browser: export and import buttons in the feed editor panel. Export downloads an OPML file; import opens a file picker accepting `.opml`, `.xml`, and `.json` files.
+- Browser: add custom feed by URL in the feed editor. Type a feed URL and optional name, click "add", and it appears in the draft selection. Validates URL format and rejects duplicates.
 
 ## [0.2.0] - 2026-03-13
 

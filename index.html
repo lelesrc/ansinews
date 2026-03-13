@@ -328,6 +328,59 @@
       background: #0f0f0f;
       flex-wrap: wrap;
     }
+    .cfg-add-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--sep);
+      background: #0f0f0f;
+    }
+    .cfg-add-url {
+      flex: 1 1 280px;
+      min-width: 0;
+      border: 1px solid var(--sep);
+      background: #090909;
+      color: var(--bright);
+      font: inherit;
+      padding: 8px 10px;
+      outline: none;
+    }
+    .cfg-add-url:focus {
+      border-color: var(--cyan);
+    }
+    .cfg-add-name {
+      flex: 0 1 180px;
+      min-width: 0;
+      border: 1px solid var(--sep);
+      background: #090909;
+      color: var(--bright);
+      font: inherit;
+      padding: 8px 10px;
+      outline: none;
+    }
+    .cfg-add-name:focus {
+      border-color: var(--cyan);
+    }
+    .cfg-add-btn {
+      border: 1px solid var(--sep);
+      background: var(--bg2);
+      color: var(--green);
+      font: inherit;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 7px 10px;
+      font-size: 11px;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .cfg-add-btn:hover {
+      border-color: var(--text);
+    }
+    .cfg-add-btn:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
     .cfg-search {
       flex: 1 1 280px;
       min-width: 0;
