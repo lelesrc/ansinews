@@ -15,6 +15,7 @@
     saving: false,
     search: '',
     selectedIds: Object.create(null),
+    removedIds: Object.create(null),
     customFeeds: [],
     catalog: [],
     catalogStatus: 'idle',
@@ -197,6 +198,7 @@
     editorState.cursor = 0;
     editorState.addUrl = '';
     editorState.addName = '';
+    editorState.removedIds = Object.create(null);
     seedDraftSelection(app.getConfig().feeds);
     if (editorState.catalogStatus === 'error') {
       editorState.catalogStatus = 'idle';
@@ -214,6 +216,7 @@
     editorState.addUrl = '';
     editorState.addName = '';
     editorState.selectedIds = Object.create(null);
+    editorState.removedIds = Object.create(null);
     editorState.customFeeds = [];
     editorState.cursor = 0;
     editorState.dirty = true;
@@ -271,7 +274,7 @@
     }
 
     editorState.catalog.forEach(function(feed) {
-      if (!feedMatchesQuery(feed, query)) {
+      if (editorState.removedIds[feed.id] || !feedMatchesQuery(feed, query)) {
         return;
       }
 
@@ -363,6 +366,7 @@
 
   function removeFeed(feedId) {
     delete editorState.selectedIds[feedId];
+    editorState.removedIds[feedId] = true;
     editorState.customFeeds = editorState.customFeeds.filter(function(f) {
       return f.id !== feedId;
     });
