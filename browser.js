@@ -750,15 +750,13 @@
       terminal.innerHTML = '<div class="app-shell">' + appInner + '</div>'
         + renderConfigPanel(view.tabs);
 
-      if (scrollSnapshot) {
-        var restoredBody = terminal.querySelector('.cfg-body');
-        if (restoredBody) {
-          restoredBody.scrollTop = scrollSnapshot;
-        }
+      var restoredBody = terminal.querySelector('.cfg-body');
+      if (restoredBody && scrollSnapshot) {
+        restoredBody.scrollTop = scrollSnapshot;
       }
 
       var focusedRow = terminal.querySelector('.cfg-row-focus');
-      if (focusedRow) {
+      if (focusedRow && !scrollSnapshot) {
         focusedRow.scrollIntoView({ block: 'nearest' });
       }
     }
