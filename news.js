@@ -745,14 +745,17 @@ function handleCLI() {
   var args = process.argv.slice(2);
   var exportIndex = args.indexOf('--export');
   var importIndex = args.indexOf('--import');
+  var addFeedIndex = args.indexOf('--add-feed');
 
   if (args.includes('--help') || args.includes('-h')) {
-    console.log('Usage: ansinews [options]');
+    console.log('Usage: node news.js [options]');
     console.log('');
     console.log('Options:');
-    console.log('  --export <path>  Export feeds to file (OPML by default, .json for JSON)');
-    console.log('  --import <path>  Import feeds from file (OPML or JSON)');
-    console.log('  --help, -h       Show this help');
+    console.log('  --add-feed <url>         Append a feed by RSS/Atom URL');
+    console.log('  --name <label>           Label for --add-feed (optional)');
+    console.log('  --import <path>          Replace feed list from an OPML or JSON file');
+    console.log('  --export <path>          Export feed list (.opml or .json)');
+    console.log('  --help, -h               Show this help');
     console.log('');
     console.log('Without options, starts the interactive terminal reader.');
     process.exit(0);
@@ -776,6 +779,33 @@ function handleCLI() {
       process.exit(1);
     }
     console.log('Exported ' + config.feeds.length + ' feeds to ' + exportPath);
+    process.exit(0);
+  }
+
+  if (addFeedIndex !== -1) {
+    var feedUrl = args[addFeedIndex + 1];
+    if (!feedUrl || feedUrl.startsWith('--')) {
+      console.error('Error: --add-feed requires a URL.');
+      process.exit(1);
+    }
+    var nameIndex = args.indexOf('--name');
+    var feedName = nameIndex !== -1 && args[nameIndex + 1] && !args[nameIndex + 1].startsWith('--')
+      ? args[nameIndex + 1]
+      : '';
+    var currentConfig = normalizeConfig(loadPrefs());
+    var duplicate = currentConfig.feeds.some(function(f) { return f.url === feedUrl; });
+    if (duplicate) {
+      console.log('Feed already in list: ' + feedUrl);
+      process.exit(0);
+    }
+    var result = normalizeFeeds([{ url: feedUrl, name: feedName }]);
+    if (!result.feeds.length) {
+      console.error('Invalid feed URL: ' + feedUrl);
+      process.exit(1);
+    }
+    var newFeeds = currentConfig.feeds.concat(result.feeds);
+    savePrefs({ active: currentConfig.active, feeds: newFeeds });
+    console.log('Added: ' + feedUrl + ' (' + newFeeds.length + ' feeds total)');
     process.exit(0);
   }
 

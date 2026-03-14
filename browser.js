@@ -29,6 +29,7 @@
   let catalogRequest = null;
   let lastActiveTab = null;
   let lastRenderedCursor = -1;
+  let lastStructuralHTML = null;
 
   const rootEl = function() {
     return document.getElementById('terminal');
@@ -750,12 +751,31 @@
       statusHTML += '<span class="s-hints">' + esc(view.hintKeys) + '</span>';
     }
 
+    const clockHTML = (view.loading ? 'LOAD ' : '') + view.timer + ' &nbsp; ' + view.clock;
+
+    // Clock-only fast path: check before building appInner to avoid the
+    // expensive string allocation on every clock tick. Rebuilding the DOM
+    // every second kills scroll momentum on .list.
+    if (!editorState.open && !dirty) {
+      const structuralHTML = tabsHTML + filterHTML + rowsHTML + detailHTML + statusHTML + (view.activeError || '');
+      if (structuralHTML === lastStructuralHTML) {
+        const clockEl = terminal.querySelector('.hdr-clock');
+        if (clockEl) {
+          clockEl.innerHTML = clockHTML;
+          return;
+        }
+      }
+      lastStructuralHTML = structuralHTML;
+    } else {
+      lastStructuralHTML = null;
+    }
+
     const appInner =
         '<div class="hdr">'
           + '<span class="hdr-l">&gt; ANSINEWS v' + view.version + '</span>'
           + '<div class="hdr-r">'
             + '<button class="cfg-btn" type="button">feeds</button>'
-            + '<span>' + (view.loading ? 'LOAD ' : '') + view.timer + ' &nbsp; ' + view.clock + '</span>'
+            + '<span class="hdr-clock">' + clockHTML + '</span>'
           + '</div>'
         + '</div>'
         + '<div class="tabs">' + tabsHTML + '</div>'
