@@ -41,6 +41,8 @@
     fetchXML: fetchXML,
     openURL: openURL,
     getListHeight: function() {
+      // Browser uses native CSS overflow scrolling, not virtual scroll.
+      // Return a large value so syncScroll never clips the item list.
       return 9999;
     },
     render: render
@@ -768,8 +770,6 @@
         + '<div class="row statusbar">' + statusHTML + '</div>';
 
     const existingOverlay = terminal.querySelector('.cfg-overlay');
-    const cursorChanged = view.state.cursor !== lastRenderedCursor;
-    lastRenderedCursor = view.state.cursor;
 
     if (editorState.open && existingOverlay && !dirty) {
       var shell = terminal.querySelector('.app-shell');
@@ -779,8 +779,10 @@
     } else {
       var cfgBody = existingOverlay && existingOverlay.querySelector('.cfg-body');
       var scrollSnapshot = cfgBody ? cfgBody.scrollTop : null;
-      var existingList = terminal.querySelector('.list');
+      var existingList = !editorState.open ? terminal.querySelector('.list') : null;
       var listScrollSnapshot = existingList ? existingList.scrollTop : 0;
+      var cursorChanged = view.state.cursor !== lastRenderedCursor;
+      lastRenderedCursor = view.state.cursor;
 
       terminal.innerHTML = '<div class="app-shell">' + appInner + '</div>'
         + renderConfigPanel(view.tabs);
