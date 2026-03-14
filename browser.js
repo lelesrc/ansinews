@@ -27,6 +27,7 @@
     addName: ''
   };
   let catalogRequest = null;
+  let lastActiveTab = null;
 
   const rootEl = function() {
     return document.getElementById('terminal');
@@ -313,7 +314,8 @@
       return;
     }
 
-    var maxIdx = Math.max(0, buildFlatFeeds().length - 1);
+    var flat = buildFlatFeeds();
+    var maxIdx = Math.max(0, flat.length - 1);
     var moved = core.moveCursor(editorState.cursor, key, maxIdx);
 
     if (moved !== null) {
@@ -326,16 +328,14 @@
 
     switch (key) {
       case ' ':
-        var feeds = buildFlatFeeds();
-        if (feeds[editorState.cursor]) {
-          var feedId = feeds[editorState.cursor].id;
+        if (flat[editorState.cursor]) {
+          var feedId = flat[editorState.cursor].id;
           setFeedSelection(feedId, !editorState.selectedIds[feedId]);
         }
         return;
       case 'Delete':
-        var delFeeds = buildFlatFeeds();
-        if (delFeeds[editorState.cursor]) {
-          removeFeed(delFeeds[editorState.cursor].id);
+        if (flat[editorState.cursor]) {
+          removeFeed(flat[editorState.cursor].id);
         }
         return;
       case '/':
@@ -776,13 +776,13 @@
       }
     } else {
       var cfgBody = existingOverlay && existingOverlay.querySelector('.cfg-body');
-      var scrollSnapshot = cfgBody ? cfgBody.scrollTop : 0;
+      var scrollSnapshot = cfgBody ? cfgBody.scrollTop : null;
 
       terminal.innerHTML = '<div class="app-shell">' + appInner + '</div>'
         + renderConfigPanel(view.tabs);
 
       var restoredBody = terminal.querySelector('.cfg-body');
-      if (restoredBody && scrollSnapshot) {
+      if (restoredBody && scrollSnapshot !== null) {
         restoredBody.scrollTop = scrollSnapshot;
       }
 
@@ -792,11 +792,15 @@
       }
     }
 
-    var activeTab = terminal.querySelector('.tab-on');
-    if (activeTab) {
-      var tabsContainer = activeTab.parentElement;
-      var tabCenter = activeTab.offsetLeft + activeTab.offsetWidth / 2;
-      tabsContainer.scrollLeft = tabCenter - tabsContainer.clientWidth / 2;
+    var currentActive = view.state.active;
+    if (currentActive !== lastActiveTab) {
+      lastActiveTab = currentActive;
+      var activeTab = terminal.querySelector('.tab-on');
+      if (activeTab) {
+        var tabsContainer = activeTab.parentElement;
+        var tabCenter = activeTab.offsetLeft + activeTab.offsetWidth / 2;
+        tabsContainer.scrollLeft = tabCenter - tabsContainer.clientWidth / 2;
+      }
     }
 
     restoreFocus(focusSnapshot);
