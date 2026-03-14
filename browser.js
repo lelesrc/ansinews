@@ -28,6 +28,7 @@
   };
   let catalogRequest = null;
   let lastActiveTab = null;
+  let lastRenderedCursor = -1;
 
   const rootEl = function() {
     return document.getElementById('terminal');
@@ -40,7 +41,7 @@
     fetchXML: fetchXML,
     openURL: openURL,
     getListHeight: function() {
-      return 35;
+      return 9999;
     },
     render: render
   };
@@ -705,14 +706,13 @@
         + esc(view.state.filter) + '<span class="blink">_</span></div>'
       : '';
 
-    const rowsHTML = view.visibleItems.map(function(item, visibleIndex) {
-      const absoluteIndex = view.state.scroll + visibleIndex;
-      const selected = absoluteIndex === view.state.cursor ? ' sel' : '';
+    const rowsHTML = view.items.map(function(item, index) {
+      const selected = index === view.state.cursor ? ' sel' : '';
       const src = (item.feedTag || '?????').padEnd(5).slice(0, 5);
       const age = view.meta.fmtAge(item.date).padEnd(4).slice(0, 4);
       const color = item.css || '#22d3ee';
 
-      return '<div class="row item-row' + selected + '" data-idx="' + absoluteIndex + '">'
+      return '<div class="row item-row' + selected + '" data-idx="' + index + '">'
         + '<span class="src" style="color:' + color + '">' + src + '</span>'
         + '<span class="age">' + age + '</span>'
         + '<span class="headline">' + esc(item.title) + '</span>'
@@ -768,6 +768,8 @@
         + '<div class="row statusbar">' + statusHTML + '</div>';
 
     const existingOverlay = terminal.querySelector('.cfg-overlay');
+    const cursorChanged = view.state.cursor !== lastRenderedCursor;
+    lastRenderedCursor = view.state.cursor;
 
     if (editorState.open && existingOverlay && !dirty) {
       var shell = terminal.querySelector('.app-shell');
@@ -777,6 +779,8 @@
     } else {
       var cfgBody = existingOverlay && existingOverlay.querySelector('.cfg-body');
       var scrollSnapshot = cfgBody ? cfgBody.scrollTop : null;
+      var existingList = terminal.querySelector('.list');
+      var listScrollSnapshot = existingList ? existingList.scrollTop : 0;
 
       terminal.innerHTML = '<div class="app-shell">' + appInner + '</div>'
         + renderConfigPanel(view.tabs);
@@ -789,6 +793,18 @@
       var focusedRow = terminal.querySelector('.cfg-row-focus');
       if (focusedRow && cursorMoved) {
         focusedRow.scrollIntoView({ block: 'nearest' });
+      }
+
+      var restoredList = terminal.querySelector('.list');
+      if (restoredList) {
+        if (cursorChanged) {
+          var selRow = restoredList.querySelector('.item-row.sel');
+          if (selRow) {
+            selRow.scrollIntoView({ block: 'nearest' });
+          }
+        } else {
+          restoredList.scrollTop = listScrollSnapshot;
+        }
       }
     }
 
