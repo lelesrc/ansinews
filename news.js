@@ -31,7 +31,9 @@ const A = {
   clearLine: '\x1b[K',
   clearDown: '\x1b[J',
   hideCursor: '\x1b[?25l',
-  showCursor: '\x1b[?25h'
+  showCursor: '\x1b[?25h',
+  altScreenEnter: '\x1b[?1049h',
+  altScreenExit: '\x1b[?1049l'
 };
 
 let cols = process.stdout.columns || 120;
@@ -730,7 +732,7 @@ function parseNodeKey(raw) {
 }
 
 function cleanup() {
-  process.stdout.write(A.showCursor + A.reset + '\x1b[2J\x1b[H');
+  process.stdout.write(A.altScreenExit + A.showCursor + A.reset);
   try {
     process.stdin.setRawMode(false);
   } catch (error) {
@@ -839,7 +841,7 @@ app = createApp({
   }
 });
 
-process.stdout.write(A.hideCursor + A.clear);
+process.stdout.write(A.altScreenEnter + A.hideCursor + A.clear);
 
 process.stdout.on('resize', function() {
   cols = process.stdout.columns || cols;
