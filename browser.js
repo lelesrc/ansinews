@@ -792,6 +792,13 @@
       }
     }
 
+    var activeTab = terminal.querySelector('.tab-on');
+    if (activeTab) {
+      var tabsContainer = activeTab.parentElement;
+      var tabCenter = activeTab.offsetLeft + activeTab.offsetWidth / 2;
+      tabsContainer.scrollLeft = tabCenter - tabsContainer.clientWidth / 2;
+    }
+
     restoreFocus(focusSnapshot);
   }
 
