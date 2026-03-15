@@ -1,3 +1,4 @@
 .ansinews/
 node_modules/
+netlify-site/
 .DS_Store
