@@ -1,6 +1,9 @@
 # ansinews
 
 [![CI](https://github.com/lelesrc/ansinews/actions/workflows/ci.yml/badge.svg)](https://github.com/lelesrc/ansinews/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/ansinews)](https://www.npmjs.com/package/ansinews)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)](package.json)
 
 A minimal RSS reader for terminal, web, and AI agents. Pure JavaScript, zero dependencies, no install needed.
 
