@@ -1,5 +1,7 @@
 # ansinews
 
+[![CI](https://github.com/lelesrc/ansinews/actions/workflows/ci.yml/badge.svg)](https://github.com/lelesrc/ansinews/actions/workflows/ci.yml)
+
 A minimal RSS reader for terminal, web, and AI agents. Pure JavaScript, zero dependencies, no install needed.
 
 [Try the live demo](https://ansinews.netlify.app/)
@@ -10,17 +12,6 @@ A minimal RSS reader for terminal, web, and AI agents. Pure JavaScript, zero dep
 
 ---
 
-## Quick start
-
-### [Try the live demo](https://ansinews.netlify.app/)
-
-### Run it directly, no install needed:
-
-```sh
-npx ansinews
-```
-
-
 ## What it does
 
 ansinews pulls headlines from public RSS feeds and shows them in a keyboard-driven interface.
@@ -28,10 +19,10 @@ It runs in your terminal or in your browser, from the same codebase.
 
 - **No install needed** — `npx ansinews` and start reading. No build step, no binary to download.
 - **Runs in the browser too** — `npx ansinews --browser` opens the browser UI with a local server.
+- **MCP server included** — let your AI agent read the news too. See [MCP](#mcp).
 - **64 curated feeds** across 8 categories. Pick the ones you want from the built-in feed picker.
 - **One shared core** — two thin platform shells, ~3,500 lines of application code split evenly three ways.
 - **Privacy by default** — preferences stay local. A JSON file in terminal, localStorage in browser. Nothing phones home.
-- **Bonus: MCP server** — because why not? Let your AI agent read the news too.
 
 ## Features
 
@@ -42,9 +33,9 @@ It runs in your terminal or in your browser, from the same codebase.
 - Detail view with article summary, author, and date
 - Auto-refresh on a 5-minute cycle with a visible countdown
 - OPML and JSON import/export for feed backup and migration
+- MCP server (`mcp.js`) exposes feed tools over stdio for integration with agentic workflows
 - `--browser` flag starts a local server with built-in CORS proxy and opens the browser UI
 - Terminal CLI flags: `--import`, `--export`, `--add-feed`, `--browser`, `--help`
-- MCP server (`mcp.js`) exposes feed tools over stdio for integration with agentic workflows
 - Full test suite using Node's built-in test runner, no test dependencies
 
 ---
