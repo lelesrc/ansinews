@@ -9,15 +9,14 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build deploy directory
         run: |
-          mkdir -p netlify-site/netlify/functions netlify-site/fonts
-          cp netlify/netlify.toml netlify-site/
-          cp netlify/functions/proxy.js netlify-site/netlify/functions/
+          mkdir -p netlify-site/fonts
+          cp netlify/netlify.toml .
           cp index.html browser.js ansinews-core.js default_feeds.json netlify-site/
           cp fonts/* netlify-site/fonts/
       - name: Deploy
         uses: netlify/actions/cli@master
         with:
-          args: deploy --dir=netlify-site --prod
+          args: deploy --dir=netlify-site --functions=netlify/functions --prod
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
