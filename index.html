@@ -32,6 +32,7 @@
       --muted:    #888;
       --text:     #c8c8c8;
       --bright:   #f0f0f0;
+      --hdr-accent: #93c5fd;
       --amber:    #f59e0b;
       --blue:     #1d4ed8;
       --blue-bg:  #172554;
@@ -139,7 +140,7 @@
       flex-shrink: 0;
       letter-spacing: 0.04em;
     }
-    .hdr-l { color: #93c5fd; }
+    .hdr-l { color: var(--hdr-accent); }
     .hdr-r {
       color: var(--green);
       font-size: 12px;
@@ -160,6 +161,13 @@
       letter-spacing: 0.08em;
       cursor: pointer;
     }
+    .gh-link {
+      font-size: 11px;
+      color: var(--hdr-accent);
+      text-decoration: underline;
+      letter-spacing: 0.04em;
+    }
+    .gh-link:hover { color: var(--bright); }
     .cfg-btn {
       padding: 2px 8px;
       font-size: 11px;

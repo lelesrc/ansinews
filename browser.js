@@ -3,6 +3,8 @@
 
   const core = globalThis.AnsiNewsCore;
   const CATALOG_PATH = 'default_feeds.json';
+  const REPO_URL = 'https://github.com/lelesrc/ansinews';
+  const prefersLight = window.matchMedia('(prefers-color-scheme: light)');
 
   if (!core) {
     throw new Error('ansinews-core.js must be loaded before browser.js');
@@ -52,7 +54,7 @@
   function toggleTheme() {
     var current = document.documentElement.getAttribute('data-theme');
     if (!current) {
-      current = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      current = prefersLight.matches ? 'light' : 'dark';
     }
     var next = current === 'light' ? 'dark' : 'light';
     document.documentElement.setAttribute('data-theme', next);
@@ -814,7 +816,8 @@
         '<div class="hdr">'
           + '<span class="hdr-l">&gt; ANSINEWS v' + view.version + '</span>'
           + '<div class="hdr-r">'
-            + '<button class="theme-btn" type="button">' + (document.documentElement.getAttribute('data-theme') === 'light' || (!document.documentElement.getAttribute('data-theme') && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'night' : 'day') + '</button>'
+            + '<a class="gh-link" href="' + REPO_URL + '" target="_blank" rel="noopener">GitHub</a>'
+            + '<button class="theme-btn" type="button">' + (document.documentElement.getAttribute('data-theme') === 'light' || (!document.documentElement.getAttribute('data-theme') && prefersLight.matches) ? 'night' : 'day') + '</button>'
             + '<button class="cfg-btn" type="button">feeds</button>'
             + '<span class="hdr-clock">' + clockHTML + '</span>'
           + '</div>'

@@ -2,9 +2,12 @@
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-03-15
+
 ### Added
 
 - `ansinews --browser` starts a local HTTP server with a built-in CORS proxy and opens the browser UI. Use `--port <number>` to change the default port (9001). The browser shell auto-detects localhost and routes feed requests through the local proxy instead of an external CORS service.
+- Browser: GitHub repository link in the header.
 - Terminal auto-detects the terminal background color at startup via OSC 11 query, falling back to the `COLORFGBG` environment variable, then to dark. The correct dark or light theme is applied before the first render. Press `t` to override for the current session (not persisted).
 - Day/night mode in the browser: respects OS `prefers-color-scheme` by default, with a manual toggle button in the header. Preference is persisted in browser storage.
 - Light theme color palettes for both terminal and browser, tuned for WCAG 2.1 AA contrast (4.5:1 minimum for body text, 3:1 for UI chrome).
@@ -14,6 +17,9 @@
 - Terminal: `--export <path>` and `--import <path>` CLI flags for non-interactive feed backup, restore, and migration. `--help` flag documents usage.
 - Browser: export and import buttons in the feed editor panel. Export downloads an OPML file; import opens a file picker accepting `.opml`, `.xml`, and `.json` files.
 - Browser: add custom feed by URL in the feed editor. Type a feed URL and optional name, click "add", and it appears in the draft selection. Validates URL format and rejects duplicates.
+- GitHub Actions CI workflow with test badge in README.
+- Automated npm publish on GitHub release and Netlify deploy on push to main.
+- npm version, license, and zero-dependencies badges in README.
 
 ### Fixed
 
@@ -26,7 +32,8 @@
 - Light mode: header and active tab now use light-on-dark text to maintain contrast against their colored backgrounds.
 - Terminal hint bar uses `⏎` symbol instead of `enter`, compacts feed navigation hint, and wraps gracefully on narrow terminals.
 - Browser hint bar wraps on narrow viewports, keeping each shortcut–label pair on the same line.
-- Browser CSS: replaced ~10 hardcoded hex color literals with CSS custom properties for full theme support.
+- Browser CSS: replaced ~10 hardcoded hex color literals with CSS custom properties for full theme support. Extracted `--hdr-accent` variable for header accent color.
+- Browser: cached `matchMedia` query at module level to avoid re-evaluating on every render tick.
 - Browser: feed tag colors now use CSS classes instead of inline styles, enabling per-theme color switching.
 - Terminal: color codes refactored from a flat constant object into swappable dark/light palette objects.
 - Test suite expanded from 38 to 95 tests, improving ansinews-core.js coverage from 81% to 98% lines and 66% to 93% branches.
