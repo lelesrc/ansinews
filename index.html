@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ANSINEWS v0.2.0</title>
+  <style>
+    /* ── Font: IBM Plex Mono (SIL OFL 1.1) ─────────────── */
+    @font-face {
+      font-family: 'IBM Plex Mono';
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url(fonts/IBMPlexMono-Regular.woff2) format('woff2');
+    }
+    @font-face {
+      font-family: 'IBM Plex Mono';
+      font-style: normal;
+      font-weight: 700;
+      font-display: swap;
+      src: url(fonts/IBMPlexMono-Bold.woff2) format('woff2');
+    }
+
+    /* ── Reset & Base ───────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0c0c0c;
+      --bg2:      #111111;
+      --sep:      #222222;
+      --dim:      #666;
+      --muted:    #888;
+      --text:     #c8c8c8;
+      --bright:   #f0f0f0;
+      --amber:    #f59e0b;
+      --blue:     #1d4ed8;
+      --blue-bg:  #172554;
+      --green:    #4ade80;
+      --red:      #f87171;
+      --cyan:     #22d3ee;
+      --yellow:   #fb923c;
+      --feed-0:   #c084fc;
+      --feed-1:   #22d3ee;
+      --feed-2:   #60a5fa;
+      --feed-3:   #fb923c;
+      --feed-4:   #4ade80;
+      --feed-5:   #f87171;
+      color-scheme: dark light;
+    }
+
+    [data-theme="light"] {
+      --bg:       #f5f5f5;
+      --bg2:      #e8e8e8;
+      --sep:      #d0d0d0;
+      --dim:      #767676;
+      --muted:    #666;
+      --text:     #1a1a1a;
+      --bright:   #000;
+      --amber:    #b45309;
+      --blue:     #1d4ed8;
+      --blue-bg:  #dbeafe;
+      --green:    #166534;
+      --red:      #b91c1c;
+      --cyan:     #0c6b80;
+      --yellow:   #c2410c;
+      --feed-0:   #7c3aed;
+      --feed-1:   #0c6b80;
+      --feed-2:   #2563eb;
+      --feed-3:   #c2410c;
+      --feed-4:   #166534;
+      --feed-5:   #b91c1c;
+      color-scheme: light;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root:not([data-theme="dark"]) {
+        --bg:       #f5f5f5;
+        --bg2:      #e8e8e8;
+        --sep:      #d0d0d0;
+        --dim:      #767676;
+        --muted:    #666;
+        --text:     #1a1a1a;
+        --bright:   #000;
+        --amber:    #b45309;
+        --blue:     #1d4ed8;
+        --blue-bg:  #dbeafe;
+        --green:    #166534;
+        --red:      #b91c1c;
+        --cyan:     #0c6b80;
+        --yellow:   #c2410c;
+        --feed-0:   #7c3aed;
+        --feed-1:   #0c6b80;
+        --feed-2:   #2563eb;
+        --feed-3:   #c2410c;
+        --feed-4:   #166534;
+        --feed-5:   #b91c1c;
+        color-scheme: light;
+      }
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'IBM Plex Mono', 'SF Mono', 'Consolas', 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.55;
+      height: 100dvh;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Layout ─────────────────────────────────────────── */
+    #terminal {
+      display: flex;
+      flex-direction: column;
+      width: 100vw;
+      height: 100dvh;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    /* ── Header ─────────────────────────────────────────── */
+    .hdr {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--blue);
+      color: #fff;
+      font-weight: 700;
+      padding: 3px 8px;
+      flex-shrink: 0;
+      letter-spacing: 0.04em;
+    }
+    .hdr-l { color: #93c5fd; }
+    .hdr-r {
+      color: var(--green);
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .cfg-btn,
+    .cfg-bulk,
+    .cfg-io,
+    .cfg-cancel,
+    .cfg-save {
+      border: 1px solid var(--sep);
+      background: var(--bg2);
+      color: var(--text);
+      font: inherit;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+    }
+    .cfg-btn {
+      padding: 2px 8px;
+      font-size: 11px;
+      color: var(--amber);
+      border-color: #5c3c00;
+    }
+    .cfg-btn:hover,
+    .cfg-bulk:hover,
+    .cfg-io:hover,
+    .cfg-cancel:hover,
+    .cfg-save:hover {
+      border-color: var(--text);
+    }
+    .cfg-btn:disabled,
+    .cfg-bulk:disabled,
+    .cfg-io:disabled,
+    .cfg-cancel:disabled,
+    .cfg-save:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+
+    /* ── Tabs ───────────────────────────────────────────── */
+    .tabs {
+      display: flex;
+      align-items: center;
+      padding: 2px 4px;
+      gap: 0;
+      flex-shrink: 0;
+      overflow-x: auto;
+      white-space: nowrap;
+      background: var(--bg);
+    }
+    .tab {
+      padding: 0 8px;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      user-select: none;
+      transition: color 0.1s;
+    }
+    .tab:hover { color: var(--text); }
+    .tab-num  { color: var(--dim); }
+    .tab.tab-on {
+      background: var(--amber);
+      color: #000;
+      font-weight: 700;
+    }
+    .tab.tab-on .tab-num { color: #5c3c00; }
+    .tab.tab-err { color: var(--red); }
+    .tab.tab-err .tab-num { color: var(--red); opacity: 0.6; }
+    .tab-sep  { color: var(--sep); padding: 0 1px; }
+
+    /* ── Feed error ─────────────────────────────────────── */
+    .feed-error {
+      color: var(--red);
+      padding: 24px 16px;
+      flex: 1;
+      min-height: 0;
+    }
+
+    /* ── Separator ──────────────────────────────────────── */
+    .sep {
+      height: 1px;
+      background: var(--sep);
+      flex-shrink: 0;
+    }
+
+    /* ── Generic row ────────────────────────────────────── */
+    .row {
+      display: flex;
+      align-items: baseline;
+      padding: 1px 8px;
+      white-space: pre;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex-shrink: 0;
+      gap: 6px;
+    }
+
+    /* ── Column header ──────────────────────────────────── */
+    .col-hdr {
+      color: var(--dim);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+    }
+    .col-hdr span { display: inline-block; }
+
+    /* ── News list ──────────────────────────────────────── */
+    .list {
+      flex: 1;
+      overflow-y: auto;
+      min-height: 0;
+    }
+
+    .item-row {
+      padding: 2px 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .item-row:hover { background: var(--bg2); }
+    .item-row.sel   { background: var(--blue-bg); }
+    .item-row.sel .headline { color: var(--bright); font-weight: 600; }
+
+    .src      { font-weight: 700; flex-shrink: 0; width: 3.5em; display: inline-block; font-size: 12px; }
+    .age      { color: var(--green); flex-shrink: 0; width: 3em; font-size: 12px; }
+    .headline { color: var(--text); overflow: hidden; text-overflow: ellipsis; }
+
+    .feed-0 { color: var(--feed-0, #c084fc); }
+    .feed-1 { color: var(--feed-1, #22d3ee); }
+    .feed-2 { color: var(--feed-2, #60a5fa); }
+    .feed-3 { color: var(--feed-3, #fb923c); }
+    .feed-4 { color: var(--feed-4, #4ade80); }
+    .feed-5 { color: var(--feed-5, #f87171); }
+
+    /* ── Theme toggle ──────────────────────────────────── */
+    .theme-btn {
+      border: 1px solid var(--sep);
+      background: var(--bg2);
+      color: var(--text);
+      font: inherit;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 2px 8px;
+      cursor: pointer;
+    }
+    .theme-btn:hover {
+      border-color: var(--text);
+    }
+    [data-theme="light"] .hdr-r { color: #4ade80; }
+    [data-theme="light"] .tab.tab-on { color: #fff; }
+    [data-theme="light"] .tab.tab-on .tab-num { color: rgba(255,255,255,0.7); }
+    @media (prefers-color-scheme: light) {
+      :root:not([data-theme="dark"]) .hdr-r { color: #4ade80; }
+      :root:not([data-theme="dark"]) .tab.tab-on { color: #fff; }
+      :root:not([data-theme="dark"]) .tab.tab-on .tab-num { color: rgba(255,255,255,0.7); }
+    }
+
+    /* ── Filter bar ─────────────────────────────────────── */
+    .filter-row {
+      color: var(--text);
+      padding: 2px 8px;
+      flex-shrink: 0;
+    }
+    .filter-label { color: var(--amber); font-weight: 700; }
+    .blink {
+      color: var(--amber);
+      animation: blink 0.8s step-end infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* ── Detail pane ────────────────────────────────────── */
+    .detail {
+      padding: 4px 0;
+      flex-shrink: 0;
+      background: var(--bg2);
+    }
+    .d-title {
+      color: var(--bright);
+      font-weight: 700;
+      padding: 2px 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .d-desc {
+      color: var(--muted);
+      padding: 0 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 12px;
+    }
+    .d-link {
+      color: var(--cyan);
+      padding: 2px 8px;
+      font-size: 11px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      opacity: 0.8;
+    }
+    .d-meta {
+      color: var(--dim);
+      padding: 0 8px;
+      font-size: 11px;
+    }
+    .d-hint {
+      color: var(--dim);
+      padding: 0 8px;
+      font-size: 11px;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Status bar ─────────────────────────────────────── */
+    .statusbar {
+      font-size: 11px;
+      padding: 2px 8px;
+      flex-shrink: 0;
+      gap: 0;
+      overflow: hidden;
+    }
+    .s-load   { color: var(--amber); }
+    .s-err    { color: var(--red); }
+    .s-filter { color: var(--amber); }
+    .s-msg    { color: var(--amber); }
+    .s-hints  { color: var(--dim); letter-spacing: 0.04em; }
+    .s-hint   { white-space: nowrap; }
+
+    /* ── Scrollbar: hide ────────────────────────────────── */
+    ::-webkit-scrollbar { display: none; }
+    * { scrollbar-width: none; }
+
+    .cfg-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.72);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .cfg-panel {
+      width: min(920px, 100%);
+      max-height: 100%;
+      background: var(--bg);
+      border: 1px solid var(--sep);
+      box-shadow: 0 0 0 1px #000;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .cfg-header {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--sep);
+      background: var(--bg2);
+    }
+    .cfg-title {
+      color: var(--bright);
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      font-size: 12px;
+    }
+    .cfg-subtitle {
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 2px;
+    }
+    .cfg-body {
+      padding: 12px;
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .cfg-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--sep);
+      background: var(--bg2);
+      flex-wrap: wrap;
+    }
+    .cfg-add-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--sep);
+      background: var(--bg2);
+    }
+    .cfg-add-url {
+      flex: 1 1 280px;
+      min-width: 0;
+      border: 1px solid var(--sep);
+      background: var(--bg);
+      color: var(--bright);
+      font: inherit;
+      padding: 8px 10px;
+      outline: none;
+    }
+    .cfg-add-url:focus {
+      border-color: var(--cyan);
+    }
+    .cfg-add-name {
+      flex: 0 1 180px;
+      min-width: 0;
+      border: 1px solid var(--sep);
+      background: var(--bg);
+      color: var(--bright);
+      font: inherit;
+      padding: 8px 10px;
+      outline: none;
+    }
+    .cfg-add-name:focus {
+      border-color: var(--cyan);
+    }
+    .cfg-add-btn {
+      border: 1px solid var(--sep);
+      background: var(--bg2);
+      color: var(--green);
+      font: inherit;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 7px 10px;
+      font-size: 11px;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .cfg-add-btn:hover {
+      border-color: var(--text);
+    }
+    .cfg-add-btn:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+    .cfg-search {
+      flex: 1 1 280px;
+      min-width: 0;
+      border: 1px solid var(--sep);
+      background: var(--bg);
+      color: var(--bright);
+      font: inherit;
+      padding: 8px 10px;
+      outline: none;
+    }
+    .cfg-search:focus {
+      border-color: var(--cyan);
+    }
+    .cfg-summary {
+      color: var(--amber);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .cfg-bulk,
+    .cfg-io,
+    .cfg-cancel,
+    .cfg-save {
+      padding: 7px 10px;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+    .cfg-note {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.5;
+    }
+    .cfg-note-warn {
+      color: var(--amber);
+    }
+    .cfg-group {
+      border: 1px solid var(--sep);
+      background: var(--bg);
+    }
+    .cfg-group-title {
+      color: var(--bright);
+      background: var(--bg2);
+      border-bottom: 1px solid var(--sep);
+      padding: 7px 10px;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .cfg-group-rows {
+      display: flex;
+      flex-direction: column;
+    }
+    .cfg-feed-row {
+      display: grid;
+      grid-template-columns: 20px 56px minmax(0, 1fr) 24px;
+      gap: 8px;
+      align-items: start;
+      padding: 9px 10px;
+      border-top: 1px solid var(--sep);
+      cursor: pointer;
+    }
+    .cfg-feed-row:first-child {
+      border-top: none;
+    }
+    .cfg-feed-row:hover {
+      background: var(--bg2);
+    }
+    .cfg-row-focus {
+      background: var(--blue-bg);
+      outline: 1px solid var(--blue);
+    }
+    .cfg-row-focus:hover {
+      background: var(--blue-bg);
+    }
+    .cfg-check {
+      margin-top: 2px;
+      accent-color: var(--amber);
+    }
+    .cfg-feed-tag {
+      color: var(--cyan);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .cfg-feed-err { color: var(--red); }
+    .cfg-feed-copy {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .cfg-feed-name {
+      color: var(--bright);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .cfg-feed-url {
+      color: var(--muted);
+      font-size: 11px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .cfg-feed-rm {
+      align-self: center;
+      background: none;
+      border: none;
+      color: transparent;
+      font: inherit;
+      font-size: 13px;
+      line-height: 1;
+      padding: 0;
+      cursor: pointer;
+      text-align: center;
+      transition: color 0.1s;
+    }
+    .cfg-feed-row:hover .cfg-feed-rm,
+    .cfg-row-focus .cfg-feed-rm {
+      color: var(--dim);
+    }
+    .cfg-feed-rm:hover {
+      color: var(--red);
+    }
+    .cfg-feed-rm:disabled {
+      visibility: hidden;
+    }
+    .cfg-io {
+      color: var(--muted);
+    }
+    .cfg-save {
+      border-color: #14532d;
+      color: var(--green);
+    }
+    .cfg-empty {
+      color: var(--muted);
+      padding: 10px 0 4px;
+      font-size: 12px;
+    }
+    .cfg-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-top: 1px solid var(--sep);
+      background: var(--bg2);
+    }
+    .cfg-spacer {
+      flex: 1;
+    }
+    .cfg-actions-note {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    @media (max-width: 720px) {
+      .cfg-overlay {
+        padding: 0;
+      }
+      .cfg-panel {
+        width: 100%;
+        height: 100%;
+        max-height: none;
+        border: none;
+      }
+      .cfg-toolbar {
+        align-items: stretch;
+      }
+      .cfg-actions {
+        flex-wrap: wrap;
+      }
+      .cfg-spacer {
+        display: none;
+      }
+      .cfg-feed-row {
+        grid-template-columns: 20px 48px minmax(0, 1fr) 24px;
+      }
+      .cfg-actions-note {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="terminal"></div>
+  <script src="ansinews-core.js"></script>
+  <script src="browser.js"></script>
+</body>
+</html>

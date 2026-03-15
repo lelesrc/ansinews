@@ -1,0 +1,12 @@
+# Dev and internal files
+.ansinews/
+.github/
+docs/
+screenshots/
+test/
+
+CODE_OF_CONDUCT.md
+CONTRIBUTING.md
+
+.DS_Store
+.gitignore

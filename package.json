@@ -1,0 +1,36 @@
+{
+  "name": "ansinews",
+  "version": "0.3.0",
+  "description": "A minimal, zero-dependency RSS reader for terminal and web",
+  "license": "MIT",
+  "author": "lelesrc",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lelesrc/ansinews.git"
+  },
+  "homepage": "https://github.com/lelesrc/ansinews",
+  "bugs": "https://github.com/lelesrc/ansinews/issues",
+  "keywords": ["rss", "news", "terminal", "cli", "reader", "mcp", "zero-dependencies"],
+  "bin": {
+    "ansinews": "terminal.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "terminal.js",
+    "ansinews-core.js",
+    "browser.js",
+    "index.html",
+    "mcp.js",
+    "default_feeds.json",
+    "fonts/",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "start": "python3 -m http.server 9001",
+    "test": "node --test",
+    "mcp": "node mcp.js"
+  }
+}
