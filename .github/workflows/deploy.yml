@@ -1,0 +1,20 @@
+name: Deploy to Netlify
+on:
+  push:
+    branches: [main]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Copy source files to netlify-site
+        run: |
+          cp index.html browser.js ansinews-core.js default_feeds.json netlify-site/
+          cp fonts/* netlify-site/fonts/
+      - name: Deploy
+        uses: netlify/actions/cli@master
+        with:
+          args: deploy --dir=netlify-site --prod
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
